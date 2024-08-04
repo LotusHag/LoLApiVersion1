@@ -1,1 +1,1 @@
-RIOT_API_KEY = "your_api_key_here"
+RIOT_API_KEY = "RGAPI-ce6f628f-2000-4a0f-b659-d5cde1890e97"
