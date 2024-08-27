@@ -2,22 +2,10 @@
 
 import sys
 import os
-
-# Print the current working directory and the sys.path for debugging
-print(f"Current working directory: {os.getcwd()}")
-print(f"Initial sys.path: {sys.path}")
-
-# Ensure the parent directory of 'src' is in the Python path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-# Print the sys.path after modification
-print(f"Modified sys.path: {sys.path}")
-
 import pandas as pd
 from src.fetch_data import get_match_data
 from src.process_data import process_match_data
-from src.store_data import store_match_data
-from src.analyse_data import calculate_team_averages
+from src.store_data import get_database, store_match_data
 
 def main():
     # Load the Excel file with match details
@@ -26,6 +14,8 @@ def main():
 
     # Debug: Print first few rows to verify data structure
     print(df.head())
+
+    db = get_database()
 
     for index, row in df.iterrows():
         split = row[0]
@@ -48,15 +38,13 @@ def main():
             print(f"Processed data for GameId {game_id}")
 
             # Store data
-            store_match_data(processed_data)
+            store_match_data(db, processed_data, division, split, match_type, blue_team_name, red_team_name)
             print(f"Stored data for GameId {game_id}")
 
         except Exception as e:
             print(f"Error processing GameId {game_id}: {e}")
 
-    # Analyse data
-    team_averages = calculate_team_averages()
-    print("Team Averages:", team_averages)
+    print("Processing complete.")
 
 if __name__ == "__main__":
     main()
