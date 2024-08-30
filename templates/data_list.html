@@ -1,0 +1,28 @@
+<!-- templates/data_list.html -->
+
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{{ data_type.capitalize() }}</h2>
+<ul>
+  {% for item in data %}
+  <li>
+    <a href="{{ url_for('data_detail', data_type=data_type, object_id=item['_id']) }}">
+      {% if data_type == 'matches' %}
+        {{ item['teams'][0]['team_name'] }} vs {{ item['teams'][1]['team_name'] }} - 
+        Winner: {{ item['teams'][0]['team_name'] if item['teams'][0]['win'] else item['teams'][1]['team_name'] }} 
+        on {{ item['date'] }}
+      {% elif data_type == 'players' %}
+        {{ item['summoner_names'] | join(', ') }} 
+        (Last team: 
+        <a href="{{ url_for('data_detail', data_type='teams', object_id=item['current_teams'][-1]) }}">
+          {{ item['current_teams'][-1]['team_name'] if item['current_teams'] else 'N/A' }}
+        </a>)
+      {% elif data_type == 'teams' %}
+        {{ item['team_name'] }} ({{ item['division'] }} / {{ item['split'] }})
+      {% endif %}
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

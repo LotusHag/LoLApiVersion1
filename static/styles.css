@@ -1,0 +1,125 @@
+/* static/styles.css */
+
+/* General styling */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+}
+
+.navbar {
+    background-color: #333;
+    overflow: hidden;
+    text-align: center;
+    padding: 10px 0;
+}
+
+.navbar button {
+    background-color: #333;
+    color: white;
+    border: none;
+    padding: 14px 20px;
+    text-align: center;
+    font-size: 16px;
+    cursor: pointer;
+    display: inline-block;
+    margin: 0 5px;
+}
+
+.navbar button:hover {
+    background-color: #575757;
+}
+
+.container {
+    margin: 20px auto;
+    max-width: 800px;
+}
+
+h1, h2 {
+    text-align: center;
+}
+
+/* New styles for team display */
+.team-container {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.team {
+    width: 48%;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+.blue-team {
+    background-color: #e0f7ff;
+}
+
+.red-team {
+    background-color: #ffe0e0;
+}
+
+.player-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.player {
+    display: flex;
+    align-items: center;
+    background-color: white;
+    padding: 10px;
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.player-name, .champion, .kda, .damage, .gold-cs, .items {
+    margin-right: 15px;
+}
+
+.items img {
+    width: 24px;
+    height: 24px;
+    margin: 0 2px;
+}
+
+/* Centered menu and modern buttons */
+.centered-menu {
+    text-align: center;
+    margin-top: 50px;
+}
+
+.data-button {
+    display: inline-block;
+    padding: 15px 30px;
+    margin: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    background-color: #007BFF;
+    border: none;
+    border-radius: 5px;
+    text-align: center;
+    text-decoration: none;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.data-button:hover {
+    background-color: #0056b3;
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* New styles for winner and loser */
+.winner {
+    color: green;
+    font-weight: bold;
+}
+
+.loser {
+    color: red;
+    font-weight: bold;
+}
