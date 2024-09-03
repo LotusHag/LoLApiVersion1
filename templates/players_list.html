@@ -1,0 +1,47 @@
+<!-- templates/players_list.html -->
+
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Players</h2>
+<div class="filter-options">
+  <input type="text" id="searchInput" placeholder="Search..." onkeyup="filterList()">
+</div>
+<div id="dataList">
+  {% for player in data %}
+  <div class="data-container">
+    <div class="data-bar" onclick="toggleDetails('{{ player['_id'] }}', 'players')">
+      <span class="data-summary">
+        <a href="{{ url_for('data_detail', data_type='players', object_id=player['_id']) }}">
+          {{ player.get('summoner_names', ['Unknown Player'])[0] }}
+        </a>
+      </span>
+      <button class="details-button" onclick="event.stopPropagation(); window.location.href='{{ url_for('data_detail', data_type='players', object_id=player['_id']) }}'">
+        More Details
+      </button>
+    </div>
+    <div id="details-{{ player['_id'] }}" class="data-details" style="display: none;">
+      <!-- Player stats and other relevant details -->
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  function filterList() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase();
+    const dataBars = document.querySelectorAll('.data-bar');
+
+    dataBars.forEach(bar => {
+      const textValue = bar.textContent || bar.innerText;
+      bar.style.display = textValue.toLowerCase().indexOf(filter) > -1 ? '' : 'none';
+    });
+  }
+
+  function toggleDetails(itemId, dataType) {
+    const details = document.getElementById(`details-${itemId}`);
+    details.style.display = details.style.display === 'none' ? 'block' : 'none';
+  }
+</script>
+{% endblock %}

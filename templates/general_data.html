@@ -5,8 +5,8 @@
 {% block content %}
 <h2>Select Data Type</h2>
 <div class="centered-menu">
-  <a href="{{ url_for('list_data', data_type='matches') }}" class="data-button">Matches</a>
-  <a href="{{ url_for('list_data', data_type='players') }}" class="data-button">Players</a>
-  <a href="{{ url_for('list_data', data_type='teams') }}" class="data-button">Teams</a>
+  <a href="{{ url_for('list_matches') }}" class="data-button">Matches</a>
+  <a href="{{ url_for('list_players') }}" class="data-button">Players</a>
+  <a href="{{ url_for('list_teams') }}" class="data-button">Teams</a>
 </div>
 {% endblock %}
