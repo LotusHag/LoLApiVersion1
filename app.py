@@ -1,5 +1,4 @@
 # app.py
-
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from bson.objectid import ObjectId
 from src.store_data import get_database
@@ -47,14 +46,23 @@ def list_matches():
         resolved_teams = []
         for team_id in match.get('teams', []):
             try:
-                team = db['teams'].find_one({"_id": ObjectId(team_id)})
+                # Convert team_id to ObjectId if possible, otherwise handle it as a string
+                team = db['teams'].find_one({"_id": ObjectId(team_id)}) if ObjectId.is_valid(team_id) else db['teams'].find_one({"team_name": team_id})
                 if team:
                     resolved_teams.append(team)
                 else:
                     resolved_teams.append({"team_name": team_id})
-            except:
+            except Exception as e:
                 resolved_teams.append({"team_name": team_id})
         match['teams'] = resolved_teams
+
+        # Reintroducing the winner status and bans for each team
+        teams_data = match.get('data', {}).get('teams', [])
+        if teams_data:
+            match['teams'][0]['bans'] = teams_data[0].get('bans', [])
+            match['teams'][1]['bans'] = teams_data[1].get('bans', [])
+            match['teams'][0]['win'] = teams_data[0].get('win', False)
+            match['teams'][1]['win'] = teams_data[1].get('win', False)
 
     return render_template('matches_list.html', data=matches)
 
@@ -98,7 +106,8 @@ def data_detail(data_type, object_id):
         resolved_teams = []
         for team_id in detail.get('teams', []):
             try:
-                team = db['teams'].find_one({"_id": ObjectId(team_id)})
+                # Convert team_id to ObjectId if valid, otherwise handle it as a string
+                team = db['teams'].find_one({"_id": ObjectId(team_id)}) if ObjectId.is_valid(team_id) else db['teams'].find_one({"team_name": team_id})
                 if team:
                     resolved_teams.append(team)
                 else:
@@ -127,11 +136,18 @@ def data_detail(data_type, object_id):
             detail['players'] = []
 
     elif data_type == 'players':
-        detail = db['players'].find_one({"_id": ObjectId(object_id)})
-        detail['current_teams'] = [db['teams'].find_one({"_id": ObjectId(team_id)}) for team_id in detail.get('current_teams', [])]
+        # Modified to search by summoner_id instead of ObjectId
+        detail = db['players'].find_one({"summoner_ids": object_id})
+        if detail:
+            detail['current_teams'] = [db['teams'].find_one({"_id": ObjectId(team_id)}) for team_id in detail.get('current_teams', [])]
+        else:
+            return "Player not found", 404
 
     elif data_type == 'teams':
-        detail = db['teams'].find_one({"_id": ObjectId(object_id)})
+        # Convert team_id to ObjectId if possible, otherwise search by team_name
+        detail = db['teams'].find_one({"_id": ObjectId(object_id)}) if ObjectId.is_valid(object_id) else db['teams'].find_one({"team_name": object_id})
+        if not detail:
+            return "Team not found", 404
 
     else:
         return "Invalid data type specified", 400
@@ -154,6 +170,11 @@ def fetch_match_details(match_id):
         "teams": match.get("data", {}).get("teams", []),
         "players": match.get("data", {}).get("players", [])
     }
+
+    # Reintroducing bans and win status
+    for team in match_details["teams"]:
+        team['bans'] = [ban for ban in team.get('bans', [])]
+        team['win'] = team.get('win', False)
 
     for player in match_details["players"]:
         player["items"] = [player.get(f'item{i}') for i in range(7)]

@@ -1,5 +1,4 @@
 <!-- templates/matches_list.html -->
-
 {% extends 'base.html' %}
 
 {% block content %}
@@ -10,7 +9,7 @@
 <div id="dataList">
   {% for match in data %}
   <div class="data-container">
-    <div class="data-bar" onclick="toggleDetails('{{ match['_id'] }}', 'matches')">
+    <div class="data-bar" onclick="toggleDetails('{{ match['_id'] }}')">
       <span class="data-summary">
         {% if match.get('teams') and match['teams'][0] and match['teams'][1] %}
           <button class="team-button {{ 'winner' if match['teams'][0]['win'] else 'loser' }}" 
@@ -23,34 +22,37 @@
             {{ match['teams'][1]['team_name'] }}
           </button>
           on {{ match.get('date', 'Date not available') }}
+          <!-- Added split and division plate next to date/time -->
+          <span class="badge">{{ match['split'] }} - {{ match['division'] }}</span>
         {% else %}
           <span>Teams data is missing</span>
         {% endif %}
       </span>
-      <button class="details-button" onclick="event.stopPropagation(); toggleDetails('{{ match['_id'] }}', 'matches');">
+      <button class="details-button" onclick="event.stopPropagation(); window.location.href='{{ url_for('data_detail', data_type='matches', object_id=match['_id']) }}'">
         More Details
       </button>
     </div>
     <div id="details-{{ match['_id'] }}" class="data-details" style="display: none;">
       <div class="teams-container">
+        <!-- Blue Team Section -->
         <div class="team blue-team">
           <div class="bans-container">
             {% for ban in match['teams'][0]['bans'] %}
               <img class="ban-icon" data-champion-id="{{ ban }}" alt="Ban">
             {% endfor %}
-            <span class="{{ 'winner-label' if match['teams'][0]['win'] else 'loser-label' }}">
-              {{ 'Winner' if match['teams'][0]['win'] else 'Loser' }}
-            </span>
           </div>
+          <h4 class="{{ 'winner' if match['teams'][0]['win'] else 'loser' }}">
+            {{ 'Winner' if match['teams'][0]['win'] else 'Loser' }}
+          </h4>
           <div class="player-list">
             {% for player in match['data']['players'] if player['team_id'] == 100 %}
             <div class="player">
               <img class="champion-icon" data-champion-id="{{ player['champion_id'] }}" alt="{{ player['champion_name'] }}">
               <div class="player-info">
-                <a href="/general_data/players/{{ player['summoner_id'] }}" class="player-name">{{ player['summoner_name'] }}</a>
+                <a href="{{ url_for('data_detail', data_type='players', object_id=player['summoner_id']) }}" class="player-name">{{ player['summoner_name'] }}</a>
                 <div class="player-stats">
                   <span>KDA: {{ player['kills'] }}/{{ player['deaths'] }}/{{ player['assists'] }}</span>
-                  <span>Gold: {{ player['gold_earned'] }}</span>
+                  <span class="gold" data-gold="{{ player['gold_earned'] }}">Gold: </span>
                   <span class="damage" data-damage="{{ player['total_damage_dealt_to_champions'] }}">Damage: </span>
                   <span>Vision: {{ player['vision_score'] }}</span>
                 </div>
@@ -65,24 +67,25 @@
           </div>
         </div>
 
+        <!-- Red Team Section -->
         <div class="team red-team">
           <div class="bans-container">
             {% for ban in match['teams'][1]['bans'] %}
               <img class="ban-icon" data-champion-id="{{ ban }}" alt="Ban">
             {% endfor %}
-            <span class="{{ 'winner-label' if match['teams'][1]['win'] else 'loser-label' }}">
-              {{ 'Winner' if match['teams'][1]['win'] else 'Loser' }}
-            </span>
           </div>
+          <h4 class="{{ 'winner' if match['teams'][1]['win'] else 'loser' }}">
+            {{ 'Winner' if match['teams'][1]['win'] else 'Loser' }}
+          </h4>
           <div class="player-list">
             {% for player in match['data']['players'] if player['team_id'] == 200 %}
             <div class="player">
               <img class="champion-icon" data-champion-id="{{ player['champion_id'] }}" alt="{{ player['champion_name'] }}">
               <div class="player-info">
-                <a href="/general_data/players/{{ player['summoner_id'] }}" class="player-name">{{ player['summoner_name'] }}</a>
+                <a href="{{ url_for('data_detail', data_type='players', object_id=player['summoner_id']) }}" class="player-name">{{ player['summoner_name'] }}</a>
                 <div class="player-stats">
                   <span>KDA: {{ player['kills'] }}/{{ player['deaths'] }}/{{ player['assists'] }}</span>
-                  <span>Gold: {{ player['gold_earned'] }}</span>
+                  <span class="gold" data-gold="{{ player['gold_earned'] }}">Gold: </span>
                   <span class="damage" data-damage="{{ player['total_damage_dealt_to_champions'] }}">Damage: </span>
                   <span>Vision: {{ player['vision_score'] }}</span>
                 </div>
@@ -118,7 +121,6 @@
       const itemResponse = await fetch(`https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/en_US/item.json`);
       const itemData = await itemResponse.json();
 
-      // Map champions and items
       Object.values(championData.data).forEach(champion => {
         championMap[parseInt(champion.key)] = champion.id;
       });
@@ -127,7 +129,6 @@
         itemMap[parseInt(id)] = item.image.full;
       });
 
-      // Update champion icons
       document.querySelectorAll('.champion-icon').forEach(img => {
         const championId = img.getAttribute('data-champion-id');
         const championName = championMap[championId];
@@ -136,19 +137,32 @@
         }
       });
 
-      // Update item icons
       document.querySelectorAll('.item-icon').forEach(img => {
         const itemId = img.getAttribute('data-item-id');
         const itemImage = itemMap[itemId];
         if (itemImage) {
           img.src = `https://ddragon.leagueoflegends.com/cdn/${latestVersion}/img/item/${itemImage}`;
+        } else {
+          img.style.display = 'none';
         }
       });
 
-      // Format damage values
+      document.querySelectorAll('.ban-icon').forEach(img => {
+        const championId = img.getAttribute('data-champion-id');
+        const championName = championMap[championId];
+        if (championName) {
+          img.src = `https://ddragon.leagueoflegends.com/cdn/${latestVersion}/img/champion/${championName}.png`;
+        }
+      });
+
       document.querySelectorAll('.damage').forEach(span => {
         const damageValue = span.getAttribute('data-damage');
-        span.textContent += formatDamage(damageValue);
+        span.textContent += formatValue(damageValue);
+      });
+
+      document.querySelectorAll('.gold').forEach(span => {
+        const goldValue = span.getAttribute('data-gold');
+        span.textContent += formatValue(goldValue);
       });
 
       console.log("Game data loaded successfully.");
@@ -170,13 +184,13 @@
     });
   }
 
-  function toggleDetails(itemId, dataType) {
+  function toggleDetails(itemId) {
     const details = document.getElementById(`details-${itemId}`);
     details.style.display = details.style.display === 'none' ? 'block' : 'none';
   }
 
-  function formatDamage(damage) {
-    return (damage / 1000).toFixed(1) + 'K';
+  function formatValue(value) {
+    return (value / 1000).toFixed(1) + 'K';
   }
 </script>
 
@@ -227,6 +241,16 @@
     cursor: pointer;
     font-size: 14px;
     margin: 0 5px;
+    position: relative;
+  }
+
+  .badge {
+    background-color: #ffc107;
+    color: #333;
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin-left: 10px;
   }
 
   .winner {
@@ -279,18 +303,6 @@
     height: 40px;
   }
 
-  .winner-label {
-    color: green;
-    font-weight: bold;
-    margin-left: 10px;
-  }
-
-  .loser-label {
-    color: red;
-    font-weight: bold;
-    margin-left: 10px.
-  }
-
   .player-list {
     display: flex;
     flex-direction: column;
@@ -316,21 +328,21 @@
   .player-info {
     display: flex;
     flex-direction: column;
-    gap: 4px.
+    gap: 4px;
   }
 
   .items-grid {
-    display: grid.
+    display: grid;
     grid-template-columns: repeat(3, 24px);
     grid-gap: 4px;
-    margin-top: 5px.
+    margin-top: 5px;
   }
 
   .item-icon {
     width: 24px;
     height: 24px;
     border: 1px solid #ccc;
-    border-radius: 3px.
+    border-radius: 3px;
   }
 </style>
 {% endblock %}
