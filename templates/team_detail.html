@@ -1,0 +1,29 @@
+<!-- templates/team_detail.html -->
+
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Team Detail</h2>
+<p><strong>Team Name:</strong> {{ team_detail['team_name'] }}</p>
+<p><strong>Split:</strong> {{ team_detail['split'] }} | <strong>Division:</strong> {{ team_detail['division'] }}</p>
+<p><strong>Current Roster:</strong></p>
+<ul>
+    {% for player in team_detail['current_roster'] %}
+    <li>
+        <a href="{{ url_for('player_detail', object_id=player['_id']) }}">
+            {{ player['summoner_names'][0] }}
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+<p><strong>Match History:</strong></p>
+<ul>
+    {% for match in team_detail['match_history'] %}
+    <li>
+        <a href="{{ url_for('match_detail', object_id=match['_id']|string) }}">
+            Match ID: {{ match['data']['match_id'] }}
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

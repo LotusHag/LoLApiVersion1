@@ -1,4 +1,5 @@
 <!-- templates/matches_list.html -->
+
 {% extends 'base.html' %}
 
 {% block content %}
@@ -13,22 +14,21 @@
       <span class="data-summary">
         {% if match.get('teams') and match['teams'][0] and match['teams'][1] %}
           <button class="team-button {{ 'winner' if match['teams'][0]['win'] else 'loser' }}" 
-                  onclick="event.stopPropagation(); window.location.href='{{ url_for('data_detail', data_type='teams', object_id=match['teams'][0]['_id']|string) }}'">
+                  onclick="event.stopPropagation(); window.location.href='{{ url_for('team_detail', object_id=match['teams'][0]['_id']|string) }}'">
             {{ match['teams'][0]['team_name'] }}
           </button>
           vs
           <button class="team-button {{ 'winner' if match['teams'][1]['win'] else 'loser' }}" 
-                  onclick="event.stopPropagation(); window.location.href='{{ url_for('data_detail', data_type='teams', object_id=match['teams'][1]['_id']|string) }}'">
+                  onclick="event.stopPropagation(); window.location.href='{{ url_for('team_detail', object_id=match['teams'][1]['_id']|string) }}'">
             {{ match['teams'][1]['team_name'] }}
           </button>
           on {{ match.get('date', 'Date not available') }}
-          <!-- Added split and division plate next to date/time -->
           <span class="badge">{{ match['split'] }} - {{ match['division'] }}</span>
         {% else %}
           <span>Teams data is missing</span>
         {% endif %}
       </span>
-      <button class="details-button" onclick="event.stopPropagation(); window.location.href='{{ url_for('data_detail', data_type='matches', object_id=match['_id']) }}'">
+      <button class="details-button" onclick="event.stopPropagation(); window.location.href='{{ url_for('match_detail', object_id=match['_id']|string) }}'">
         More Details
       </button>
     </div>
@@ -49,7 +49,9 @@
             <div class="player">
               <img class="champion-icon" data-champion-id="{{ player['champion_id'] }}" alt="{{ player['champion_name'] }}">
               <div class="player-info">
-                <a href="{{ url_for('data_detail', data_type='players', object_id=player['summoner_id']) }}" class="player-name">{{ player['summoner_name'] }}</a>
+                <button class="player-button" onclick="window.location.href='{{ url_for('player_detail', object_id=player['summoner_id']|string) }}'">
+                  {{ player['summoner_name'] }}
+                </button>
                 <div class="player-stats">
                   <span>KDA: {{ player['kills'] }}/{{ player['deaths'] }}/{{ player['assists'] }}</span>
                   <span class="gold" data-gold="{{ player['gold_earned'] }}">Gold: </span>
@@ -82,7 +84,9 @@
             <div class="player">
               <img class="champion-icon" data-champion-id="{{ player['champion_id'] }}" alt="{{ player['champion_name'] }}">
               <div class="player-info">
-                <a href="{{ url_for('data_detail', data_type='players', object_id=player['summoner_id']) }}" class="player-name">{{ player['summoner_name'] }}</a>
+                <button class="player-button" onclick="window.location.href='{{ url_for('player_detail', object_id=player['summoner_id']|string) }}'">
+                  {{ player['summoner_name'] }}
+                </button>
                 <div class="player-stats">
                   <span>KDA: {{ player['kills'] }}/{{ player['deaths'] }}/{{ player['assists'] }}</span>
                   <span class="gold" data-gold="{{ player['gold_earned'] }}">Gold: </span>
@@ -242,6 +246,20 @@
     font-size: 14px;
     margin: 0 5px;
     position: relative;
+  }
+
+  .player-button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #6c757d;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+  }
+
+  .player-button:hover {
+    background-color: #5a6268;
   }
 
   .badge {

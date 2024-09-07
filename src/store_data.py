@@ -31,41 +31,41 @@ def get_or_create_team(db, team_name, division, split):
     
     return team
 
-def update_team(db, team, match_id, current_roster):
-    """Update the team with new match and roster information."""
-    teams_collection = db["teams"]
-    
-    # Update match history
-    team["match_history"].append(match_id)
-    
-    # Update roster
-    new_roster_ids = [player["summoner_id"] for player in current_roster]
-    for player_id in new_roster_ids:
-        if player_id not in team["current_roster"]:
-            team["past_roster"].extend([p for p in team["current_roster"] if p not in team["past_roster"]])
-            team["current_roster"] = new_roster_ids
-    
-    teams_collection.update_one({"_id": team["_id"]}, {"$set": team})
-
 def get_or_create_player(db, summoner_id, summoner_name):
     """Retrieve or create a player in the database."""
     players_collection = db["players"]
+
+    # Ensure summoner_id is stored as a string, not ObjectId
+    if not isinstance(summoner_id, str):
+        print(f"Error: summoner_id is not a string: {summoner_id}")
+        return None
+
+    # Try to find player by summoner_id
     player = players_collection.find_one({"summoner_ids": summoner_id})
-    
+
+    # Debugging output to track player creation and field types
+    print(f"Checking player in DB with summoner_id: {summoner_id}, summoner_name: {summoner_name}")
+    print(f"Player found: {player}")
+
     if not player:
+        # Creating new player with correct summoner_ids field format
         player = {
-            "summoner_ids": [summoner_id],
+            "summoner_ids": [summoner_id],  # Ensure this is always a list
             "summoner_names": [summoner_name],
             "current_teams": [],
             "past_teams": [],
             "match_history": [],
-            "average_stats": {}
+            "average_stats": {},
+            "champions_played": {}
         }
         player_id = players_collection.insert_one(player).inserted_id
         player["_id"] = player_id
+        print(f"New player created: {player}")  # Debug: Show player details when created
     else:
         if summoner_name not in player["summoner_names"]:
             player["summoner_names"].append(summoner_name)
+            players_collection.update_one({"_id": player["_id"]}, {"$set": {"summoner_names": player["summoner_names"]}})
+        print(f"Existing player found: {player}")  # Debug: Show player details if found
     
     return player
 
@@ -79,7 +79,7 @@ def update_player(db, player, match_id, team_id, stats):
     # Update teams
     if team_id not in player["current_teams"]:
         player["past_teams"].extend([t for t in player["current_teams"] if t not in player["past_teams"]])
-        player["current_teams"] = [team_id]
+        player["current_teams"].append(team_id)
     
     # Update average stats
     total_games = len(player["match_history"])
@@ -99,12 +99,23 @@ def update_player(db, player, match_id, team_id, stats):
                 except (TypeError, ValueError):
                     player["average_stats"][key] = value
     
+    # Update champions played
+    champion_name = stats.get("champion_name")
+    if champion_name:
+        if champion_name not in player["champions_played"]:
+            player["champions_played"][champion_name] = 1
+        else:
+            player["champions_played"][champion_name] += 1
+    
     players_collection.update_one({"_id": player["_id"]}, {"$set": player})
 
 def store_match_data(db, processed_data, division, split, match_type, blue_team_name, red_team_name):
     """Store processed match data in MongoDB and update associated teams and players."""
     matches_collection = db["matches"]
     
+    # Debugging output to check what is being stored
+    print(f"Storing match data: {processed_data}")
+
     # Store match data and get its ID
     match = {
         "match_id": processed_data["match_id"],
@@ -116,7 +127,7 @@ def store_match_data(db, processed_data, division, split, match_type, blue_team_
         "data": processed_data
     }
     match_id = matches_collection.insert_one(match).inserted_id
-    
+
     # Process teams
     blue_team = get_or_create_team(db, blue_team_name, division, split)
     red_team = get_or_create_team(db, red_team_name, division, split)
@@ -124,8 +135,12 @@ def store_match_data(db, processed_data, division, split, match_type, blue_team_
     # Process players and build current roster lists
     blue_team_roster = []
     red_team_roster = []
+
     for participant in processed_data["players"]:
+        # Retrieve or create player with debug information
         player = get_or_create_player(db, participant["summoner_id"], participant["summoner_name"])
+        print(f"Processing player: {participant['summoner_name']} with ID: {participant['summoner_id']}")
+
         team_id = blue_team["_id"] if participant["team_id"] == 100 else red_team["_id"]
         update_player(db, player, match_id, team_id, participant)
         
@@ -144,3 +159,19 @@ def store_match_data(db, processed_data, division, split, match_type, blue_team_
     # Update teams with the new match and roster information
     update_team(db, blue_team, match_id, blue_team_roster)
     update_team(db, red_team, match_id, red_team_roster)
+
+def update_team(db, team, match_id, current_roster):
+    """Update the team with new match and roster information."""
+    teams_collection = db["teams"]
+    
+    # Update match history
+    team["match_history"].append(match_id)
+    
+    # Update roster
+    new_roster_ids = [player["summoner_id"] for player in current_roster]
+    for player_id in new_roster_ids:
+        if player_id not in team["current_roster"]:
+            team["past_roster"].extend([p for p in team["current_roster"] if p not in team["past_roster"]])
+            team["current_roster"] = new_roster_ids
+    
+    teams_collection.update_one({"_id": team["_id"]}, {"$set": team})

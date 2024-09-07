@@ -10,18 +10,52 @@
 <div id="dataList">
   {% for team in data %}
   <div class="data-container">
-    <div class="data-bar" onclick="toggleDetails('{{ team['_id'] }}', 'teams')">
-      <span class="data-summary">
-        <a href="{{ url_for('data_detail', data_type='teams', object_id=team['_id']) }}">
+    <!-- The main button toggles the pop-out -->
+    <div class="data-bar" onclick="toggleDetails('{{ team['_id'] }}')">
+      <div class="team-header">
+        <!-- Team name button redirects to the team's detail page -->
+        <button class="team-name-button" onclick="event.stopPropagation(); window.location.href='{{ url_for('team_detail', object_id=team['_id']|string) }}'">
           {{ team.get('team_name', 'Unknown Team') }}
-        </a>
-      </span>
-      <button class="details-button" onclick="event.stopPropagation(); window.location.href='{{ url_for('data_detail', data_type='teams', object_id=team['_id']) }}'">
-        More Details
+        </button>
+        <span class="tag">{{ team['split'] }} - {{ team['division'] }}</span>
+      </div>
+      <!-- Details button now redirects to the team detail page -->
+      <button class="details-button" onclick="event.stopPropagation(); window.location.href='{{ url_for('team_detail', object_id=team['_id']|string) }}'">
+        View Details
       </button>
     </div>
+
+    <!-- Pop-out section with additional team details -->
     <div id="details-{{ team['_id'] }}" class="data-details" style="display: none;">
-      <!-- Team stats and other relevant details -->
+      <div class="team-roster">
+        <h4>Current Roster:</h4>
+        <ul>
+          {% for player in team.current_roster %}
+          <li>
+            {% if player %}
+              <a href="{{ url_for('player_detail', object_id=player['_id']|string) }}" class="player-name">
+                {{ player.get('summoner_names', ['Unknown Player'])[0] }}
+              </a>
+            {% else %}
+              <span class="unknown-player">Unknown Player</span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+
+      <div class="team-matches">
+        <h4>Last 10 Matches:</h4>
+        <ul>
+          {% for match in team.match_history %}
+            <li class="{{ 'winner' if match['teams'][0]['win'] and match['teams'][0]['team_name'] == team['team_name'] or match['teams'][1]['win'] and match['teams'][1]['team_name'] == team['team_name'] else 'loser' }}">
+              <a href="{{ url_for('match_detail', object_id=match['_id']|string) }}" class="match-link">
+                Game ID: {{ match['data']['match_id'] }}
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
     </div>
   </div>
   {% endfor %}
@@ -39,9 +73,125 @@
     });
   }
 
-  function toggleDetails(itemId, dataType) {
-    const details = document.getElementById(`details-${itemId}`);
+  function toggleDetails(teamId) {
+    const details = document.getElementById(`details-${teamId}`);
     details.style.display = details.style.display === 'none' ? 'block' : 'none';
   }
 </script>
+
+<style>
+  .data-container {
+    margin-bottom: 20px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+  }
+
+  .data-bar {
+    padding: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #333;
+    color: white;
+    border-radius: 8px 8px 0 0;
+    font-size: 18px;
+    cursor: pointer;
+  }
+
+  .team-header {
+    display: flex;
+    align-items: center;
+  }
+
+  .team-name-button {
+    font-weight: bold;
+    color: white;
+    text-decoration: none;
+    background-color: #007BFF;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-right: 10px;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .team-name-button:hover {
+    background-color: #0056b3;
+    text-decoration: none;
+  }
+
+  .tag {
+    background-color: #ffc107;
+    color: #333;
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-left: 10px;
+  }
+
+  .details-button {
+    padding: 8px 16px;
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  .details-button:hover {
+    background-color: #218838;
+  }
+
+  .data-details {
+    padding: 15px;
+    background-color: white;
+    border-radius: 0 0 8px 8px;
+    border-top: 1px solid #ddd;
+    display: none;
+  }
+
+  .team-roster ul, .team-matches ul {
+    padding-left: 20px;
+  }
+
+  .team-roster h4, .team-matches h4 {
+    margin-top: 0;
+  }
+
+  .player-name {
+    color: #333;
+    text-decoration: none;
+  }
+
+  .player-name:hover {
+    text-decoration: underline;
+  }
+
+  .unknown-player {
+    color: #999;
+  }
+
+  .team-matches li {
+    margin-bottom: 8px;
+  }
+
+  .match-link {
+    color: white;
+    padding: 8px;
+    border-radius: 5px;
+    text-decoration: none;
+    display: block;
+  }
+
+  .winner .match-link {
+    background-color: #28a745;
+  }
+
+  .loser .match-link {
+    background-color: #dc3545;
+  }
+</style>
 {% endblock %}

@@ -1,4 +1,5 @@
 # app.py
+
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from bson.objectid import ObjectId
 from src.store_data import get_database
@@ -46,7 +47,6 @@ def list_matches():
         resolved_teams = []
         for team_id in match.get('teams', []):
             try:
-                # Convert team_id to ObjectId if possible, otherwise handle it as a string
                 team = db['teams'].find_one({"_id": ObjectId(team_id)}) if ObjectId.is_valid(team_id) else db['teams'].find_one({"team_name": team_id})
                 if team:
                     resolved_teams.append(team)
@@ -56,7 +56,6 @@ def list_matches():
                 resolved_teams.append({"team_name": team_id})
         match['teams'] = resolved_teams
 
-        # Reintroducing the winner status and bans for each team
         teams_data = match.get('data', {}).get('teams', [])
         if teams_data:
             match['teams'][0]['bans'] = teams_data[0].get('bans', [])
@@ -71,6 +70,11 @@ def list_players():
     """List all players."""
     db = get_db()
     players = list(db['players'].find())
+    for player in players:
+        player['current_teams'] = [
+            db['teams'].find_one({'_id': ObjectId(team_id)}) 
+            for team_id in player.get('current_teams', [])
+        ]
     return render_template('players_list.html', data=players)
 
 @app.route('/general_data/teams')
@@ -78,108 +82,161 @@ def list_teams():
     """List all teams."""
     db = get_db()
     teams = list(db['teams'].find())
+
     for team in teams:
-        team['current_roster'] = [
-            db['players'].find_one({'_id': player_id}, {'summoner_names': 1}) 
-            for player_id in team.get('current_roster', [])
-        ]
+        current_roster = []
+        for player_id in team.get('current_roster', []):
+            try:
+                if ObjectId.is_valid(player_id):
+                    player = db['players'].find_one({'_id': ObjectId(player_id)})
+                else:
+                    player = db['players'].find_one({'summoner_ids': player_id})
+
+                if player:
+                    current_roster.append(player)
+                else:
+                    current_roster.append({"summoner_names": ["Unknown Player"]})
+            except Exception as e:
+                current_roster.append({"summoner_names": ["Unknown Player"]})
+
+        team['current_roster'] = current_roster
+
         match_history_ids = team.get('match_history', [])[-10:]
-        matches = db['matches'].find({'_id': {'$in': match_history_ids}})
-        team['match_history'] = list(matches)
+        matches = list(db['matches'].find({
+            '_id': {
+                '$in': [ObjectId(match_id) for match_id in match_history_ids if ObjectId.is_valid(match_id)]
+            }
+        }))
+        for match in matches:
+            game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
+            if game_start_timestamp:
+                match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                match['date'] = "Date not available"
+
+            resolved_teams = []
+            for team_id in match.get('teams', []):
+                try:
+                    resolved_team = db['teams'].find_one(
+                        {"_id": ObjectId(team_id)} if ObjectId.is_valid(team_id) else {"team_name": team_id}
+                    )
+                    resolved_teams.append(resolved_team if resolved_team else {"team_name": team_id})
+                except:
+                    resolved_teams.append({"team_name": team_id})
+            match['teams'] = resolved_teams
+
+            match_teams_data = match.get('data', {}).get('teams', [])
+            if match_teams_data:
+                match['teams'][0]['bans'] = match_teams_data[0].get('bans', [])
+                match['teams'][1]['bans'] = match_teams_data[1].get('bans', [])
+                match['teams'][0]['win'] = match_teams_data[0].get('win', False)
+                match['teams'][1]['win'] = match_teams_data[1].get('win', False)
+
+        team['match_history'] = matches
 
     return render_template('teams_list.html', data=teams)
 
-@app.route('/general_data/<data_type>/<object_id>')
-def data_detail(data_type, object_id):
-    """Display detailed information about a specific match, player, or team."""
+@app.route('/match_detail/<object_id>')
+def match_detail(object_id):
+    """Display detailed information about a specific match."""
     db = get_db()
-    detail = None
-
-    if data_type == 'matches':
-        detail = db['matches'].find_one({"_id": ObjectId(object_id)})
-        game_start_timestamp = detail.get('data', {}).get('game_start_timestamp')
-        if game_start_timestamp:
-            detail['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S')
-        else:
-            detail['date'] = "Date not available"
-
-        resolved_teams = []
-        for team_id in detail.get('teams', []):
-            try:
-                # Convert team_id to ObjectId if valid, otherwise handle it as a string
-                team = db['teams'].find_one({"_id": ObjectId(team_id)}) if ObjectId.is_valid(team_id) else db['teams'].find_one({"team_name": team_id})
-                if team:
-                    resolved_teams.append(team)
-                else:
-                    resolved_teams.append({"team_name": team_id})
-            except:
-                resolved_teams.append({"team_name": team_id})
-        detail['teams'] = resolved_teams
-
-        if 'info' in detail and 'participants' in detail['info']:
-            detail['players'] = [
-                {
-                    "summoner_name": player.get('summonerName'),
-                    "team_id": player.get('teamId'),
-                    "kda": f"{player.get('kills')}/{player.get('deaths')}/{player.get('assists')}",
-                    "damage_dealt": player.get('totalDamageDealtToChampions'),
-                    "damage_taken": player.get('totalDamageTaken'),
-                    "gold_earned": player.get('goldEarned'),
-                    "cs": player.get('totalMinionsKilled'),
-                    "items": [player.get(f'item{i}') for i in range(7)],
-                    "spells": [player.get(f'summoner{i}Id') for i in range(1, 3)],
-                    "champion": player.get('championName')
-                }
-                for player in detail['info']['participants']
-            ]
-        else:
-            detail['players'] = []
-
-    elif data_type == 'players':
-        # Modified to search by summoner_id instead of ObjectId
-        detail = db['players'].find_one({"summoner_ids": object_id})
-        if detail:
-            detail['current_teams'] = [db['teams'].find_one({"_id": ObjectId(team_id)}) for team_id in detail.get('current_teams', [])]
-        else:
-            return "Player not found", 404
-
-    elif data_type == 'teams':
-        # Convert team_id to ObjectId if possible, otherwise search by team_name
-        detail = db['teams'].find_one({"_id": ObjectId(object_id)}) if ObjectId.is_valid(object_id) else db['teams'].find_one({"team_name": object_id})
-        if not detail:
-            return "Team not found", 404
-
-    else:
-        return "Invalid data type specified", 400
-
-    return render_template('data_detail.html', detail=detail, data_type=data_type)
-
-@app.route('/fetch_match_details/<match_id>')
-def fetch_match_details(match_id):
-    """Fetch detailed match data for AJAX requests."""
-    db = get_db()
-    match = db['matches'].find_one({"_id": ObjectId(match_id)})
+    match = db['matches'].find_one({"_id": ObjectId(object_id)})
 
     if not match:
-        return jsonify({"error": "Match not found"}), 404
+        return "Match not found", 404
 
-    match_details = {
-        "match_id": match.get("match_id"),
-        "game_duration": match.get("data", {}).get("game_duration"),
-        "game_start_timestamp": match.get("data", {}).get("game_start_timestamp"),
-        "teams": match.get("data", {}).get("teams", []),
-        "players": match.get("data", {}).get("players", [])
-    }
+    game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
+    match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S') if game_start_timestamp else "Date not available"
 
-    # Reintroducing bans and win status
-    for team in match_details["teams"]:
-        team['bans'] = [ban for ban in team.get('bans', [])]
-        team['win'] = team.get('win', False)
+    resolved_teams = []
+    for team_id in match.get('teams', []):
+        try:
+            team = db['teams'].find_one({"_id": ObjectId(team_id)}) if ObjectId.is_valid(team_id) else db['teams'].find_one({"team_name": team_id})
+            resolved_teams.append(team if team else {"team_name": team_id})
+        except:
+            resolved_teams.append({"team_name": team_id})
+    match['teams'] = resolved_teams
 
-    for player in match_details["players"]:
-        player["items"] = [player.get(f'item{i}') for i in range(7)]
+    if 'info' in match and 'participants' in match['info']:
+        match['players'] = [
+            {
+                "summoner_name": player.get('summonerName'),
+                "team_id": player.get('teamId'),
+                "kda": f"{player.get('kills')}/{player.get('deaths')}/{player.get('assists')}",
+                "damage_dealt": player.get('totalDamageDealtToChampions'),
+                "damage_taken": player.get('totalDamageTaken'),
+                "gold_earned": player.get('goldEarned'),
+                "cs": player.get('totalMinionsKilled'),
+                "items": [player.get(f'item{i}') for i in range(7)],
+                "spells": [player.get(f'summoner{i}Id') for i in range(1, 3)],
+                "champion": player.get('championName')
+            }
+            for player in match['info']['participants']
+        ]
+    else:
+        match['players'] = []
 
-    return jsonify(match_details)
+    return render_template('match_detail.html', match_detail=match)
+
+@app.route('/player_detail/<object_id>')
+def player_detail(object_id):
+    """Display detailed information about a specific player."""
+    db = get_db()
+
+    # Try to fetch the player by ObjectId first, then fallback to other potential fields.
+    player = None
+    try:
+        # Attempt to fetch using ObjectId
+        player = db['players'].find_one({"_id": ObjectId(object_id)})
+    except Exception:
+        # Fallback searches using other identifiers
+        player = db['players'].find_one({"_id": object_id}) or db['players'].find_one({"summoner_ids": object_id}) or db['players'].find_one({"custom_id": object_id})
+
+    if not player:
+        return "Player not found", 404
+
+    # Retrieve the current teams of the player
+    player['current_teams'] = [db['teams'].find_one({"_id": ObjectId(team_id)}) for team_id in player.get('current_teams', []) if ObjectId.is_valid(team_id)]
+
+    return render_template('player_detail.html', player_detail=player)
+
+@app.route('/team_detail/<object_id>')
+def team_detail(object_id):
+    """Display detailed information about a specific team."""
+    db = get_db()
+    team = db['teams'].find_one({"_id": ObjectId(object_id)})
+
+    if not team:
+        return "Team not found", 404
+
+    current_roster = []
+    for player_id in team.get('current_roster', []):
+        player = db['players'].find_one({'_id': ObjectId(player_id)}) if ObjectId.is_valid(player_id) else db['players'].find_one({'summoner_ids': player_id})
+        current_roster.append(player if player else {"summoner_names": ["Unknown Player"]})
+    team['current_roster'] = current_roster
+
+    match_history_ids = team.get('match_history', [])[-10:]
+    matches = list(db['matches'].find({'_id': {'$in': [ObjectId(match_id) for match_id in match_history_ids if ObjectId.is_valid(match_id)]}}))
+    for match in matches:
+        game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
+        match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S') if game_start_timestamp else "Date not available"
+
+        resolved_teams = []
+        for team_id in match.get('teams', []):
+            resolved_team = db['teams'].find_one({"_id": ObjectId(team_id)}) if ObjectId.is_valid(team_id) else {"team_name": team_id}
+            resolved_teams.append(resolved_team)
+        match['teams'] = resolved_teams
+
+        match_teams_data = match.get('data', {}).get('teams', [])
+        if match_teams_data:
+            match['teams'][0]['bans'] = match_teams_data[0].get('bans', [])
+            match['teams'][1]['bans'] = match_teams_data[1].get('bans', [])
+            match['teams'][0]['win'] = match_teams_data[0].get('win', False)
+            match['teams'][1]['win'] = match_teams_data[1].get('win', False)
+
+    team['match_history'] = matches
+
+    return render_template('team_detail.html', team_detail=team)
 
 if __name__ == '__main__':
     app.run(debug=True)
