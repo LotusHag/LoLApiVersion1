@@ -100,7 +100,7 @@ def update_player(db, player, match_id, team_id, stats):
                     player["average_stats"][key] = value
     
     # Update champions played
-    champion_name = stats.get("champion_name")
+    champion_name = stats.get("championName")
     if champion_name:
         if champion_name not in player["champions_played"]:
             player["champions_played"][champion_name] = 1
@@ -110,7 +110,7 @@ def update_player(db, player, match_id, team_id, stats):
     players_collection.update_one({"_id": player["_id"]}, {"$set": player})
 
 def store_match_data(db, processed_data, division, split, match_type, blue_team_name, red_team_name):
-    """Store processed match data in MongoDB and update associated teams and players."""
+    """Store the entire match data from the Riot API response in MongoDB without filtering any fields."""
     matches_collection = db["matches"]
     
     # Debugging output to check what is being stored
@@ -118,13 +118,13 @@ def store_match_data(db, processed_data, division, split, match_type, blue_team_
 
     # Store match data and get its ID
     match = {
-        "match_id": processed_data["match_id"],
+        "match_id": processed_data["metadata"]["matchId"],
         "division": division,
         "split": split,
         "match_type": match_type,
         "teams": [blue_team_name, red_team_name],
         "players": [],  # Will store references to Player objects
-        "data": processed_data
+        "data": processed_data  # Store all the data without filtering
     }
     match_id = matches_collection.insert_one(match).inserted_id
 
@@ -136,21 +136,21 @@ def store_match_data(db, processed_data, division, split, match_type, blue_team_
     blue_team_roster = []
     red_team_roster = []
 
-    for participant in processed_data["players"]:
+    for participant in processed_data["info"]["participants"]:
         # Retrieve or create player with debug information
-        player = get_or_create_player(db, participant["summoner_id"], participant["summoner_name"])
-        print(f"Processing player: {participant['summoner_name']} with ID: {participant['summoner_id']}")
+        player = get_or_create_player(db, participant["summonerId"], participant["summonerName"])
+        print(f"Processing player: {participant['summonerName']} with ID: {participant['summonerId']}")
 
-        team_id = blue_team["_id"] if participant["team_id"] == 100 else red_team["_id"]
+        team_id = blue_team["_id"] if participant["teamId"] == 100 else red_team["_id"]
         update_player(db, player, match_id, team_id, participant)
         
         # Link player object to match
         match["players"].append(player["_id"])
 
         # Assign player to the correct team roster
-        if participant["team_id"] == 100:  # Assuming team_id 100 is blue team
+        if participant["teamId"] == 100:  # Assuming team_id 100 is blue team
             blue_team_roster.append(participant)
-        elif participant["team_id"] == 200:  # Assuming team_id 200 is red team
+        elif participant["teamId"] == 200:  # Assuming team_id 200 is red team
             red_team_roster.append(participant)
     
     # Update match document with player links
@@ -168,7 +168,7 @@ def update_team(db, team, match_id, current_roster):
     team["match_history"].append(match_id)
     
     # Update roster
-    new_roster_ids = [player["summoner_id"] for player in current_roster]
+    new_roster_ids = [player["summonerId"] for player in current_roster]
     for player_id in new_roster_ids:
         if player_id not in team["current_roster"]:
             team["past_roster"].extend([p for p in team["current_roster"] if p not in team["past_roster"]])
