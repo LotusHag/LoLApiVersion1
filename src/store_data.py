@@ -22,7 +22,10 @@ def get_or_create_team(db, team_name, division, split):
             "division": division,
             "current_roster": [],
             "past_roster": [],
-            "match_history": []
+            "match_history": [],
+            "stats_totals": {},  # Store total stats here
+            "champions_played": {},  # Track champions played by the team
+            "players_played": {}  # Track players who have played for the team
         }
         team_id = teams_collection.insert_one(team).inserted_id
         team["_id"] = team_id
@@ -43,10 +46,6 @@ def get_or_create_player(db, summoner_id, summoner_name):
     # Try to find player by summoner_id
     player = players_collection.find_one({"summoner_ids": summoner_id})
 
-    # Debugging output to track player creation and field types
-    print(f"Checking player in DB with summoner_id: {summoner_id}, summoner_name: {summoner_name}")
-    print(f"Player found: {player}")
-
     if not player:
         # Creating new player with correct summoner_ids field format
         player = {
@@ -55,8 +54,9 @@ def get_or_create_player(db, summoner_id, summoner_name):
             "current_teams": [],
             "past_teams": [],
             "match_history": [],
-            "average_stats": {},
-            "champions_played": {}
+            "stats_totals": {},  # Store all stats as totals
+            "champions_played": {},  # Track how often champions are played
+            "positions_played": {}  # Track how often each position is played
         }
         player_id = players_collection.insert_one(player).inserted_id
         player["_id"] = player_id
@@ -81,31 +81,33 @@ def update_player(db, player, match_id, team_id, stats):
         player["past_teams"].extend([t for t in player["current_teams"] if t not in player["past_teams"]])
         player["current_teams"].append(team_id)
     
-    # Update average stats
-    total_games = len(player["match_history"])
+    # Update stats totals, excluding championName
     for key, value in stats.items():
-        if key in [
-            "kills", "deaths", "assists", "total_damage_dealt_to_champions",
-            "total_damage_taken", "damage_dealt_to_turrets", "damage_dealt_to_objectives",
-            "gold_earned", "total_minions_killed", "vision_score", "wards_placed", 
-            "wards_killed", "vision_wards_placed", "time_ccing_others", "total_heal",
-            "double_kills", "triple_kills", "quadra_kills", "penta_kills"
-        ]:
-            if key not in player["average_stats"]:
-                player["average_stats"][key] = value
-            else:
-                try:
-                    player["average_stats"][key] = ((float(player["average_stats"][key]) * (total_games - 1)) + float(value)) / total_games
-                except (TypeError, ValueError):
-                    player["average_stats"][key] = value
+        if key == "championName":
+            continue  # Skip championName as it's tracked separately
+        if key not in player["stats_totals"]:
+            player["stats_totals"][key] = value
+        else:
+            try:
+                player["stats_totals"][key] += value
+            except (TypeError, ValueError):
+                player["stats_totals"][key] = value  # Handle conversion issues
     
-    # Update champions played
+    # Track champions played
     champion_name = stats.get("championName")
     if champion_name:
         if champion_name not in player["champions_played"]:
             player["champions_played"][champion_name] = 1
         else:
             player["champions_played"][champion_name] += 1
+    
+    # Track positions played
+    position = stats.get("individualPosition")
+    if position:
+        if position not in player["positions_played"]:
+            player["positions_played"][position] = 1
+        else:
+            player["positions_played"][position] += 1
     
     players_collection.update_one({"_id": player["_id"]}, {"$set": player})
 
@@ -135,6 +137,8 @@ def store_match_data(db, processed_data, division, split, match_type, blue_team_
     # Process players and build current roster lists
     blue_team_roster = []
     red_team_roster = []
+    blue_team_stats = {}  # Accumulate stats for the blue team
+    red_team_stats = {}   # Accumulate stats for the red team
 
     for participant in processed_data["info"]["participants"]:
         # Retrieve or create player with debug information
@@ -147,31 +151,69 @@ def store_match_data(db, processed_data, division, split, match_type, blue_team_
         # Link player object to match
         match["players"].append(player["_id"])
 
-        # Assign player to the correct team roster
-        if participant["teamId"] == 100:  # Assuming team_id 100 is blue team
-            blue_team_roster.append(participant)
-        elif participant["teamId"] == 200:  # Assuming team_id 200 is red team
-            red_team_roster.append(participant)
+        # Assign player to the correct team roster and accumulate team stats
+        if participant["teamId"] == 100:  # Blue team
+            blue_team_roster.append(player["_id"])
+            accumulate_team_stats(blue_team_stats, participant)
+            update_team_players_and_champions(blue_team, player["_id"], participant["championName"])
+        elif participant["teamId"] == 200:  # Red team
+            red_team_roster.append(player["_id"])
+            accumulate_team_stats(red_team_stats, participant)
+            update_team_players_and_champions(red_team, player["_id"], participant["championName"])
     
     # Update match document with player links
     matches_collection.update_one({"_id": match_id}, {"$set": {"players": match["players"]}})
     
-    # Update teams with the new match and roster information
-    update_team(db, blue_team, match_id, blue_team_roster)
-    update_team(db, red_team, match_id, red_team_roster)
+    # Update teams with the new match and accumulated stats
+    update_team(db, blue_team, match_id, blue_team_stats)
+    update_team(db, red_team, match_id, red_team_stats)
 
-def update_team(db, team, match_id, current_roster):
-    """Update the team with new match and roster information."""
+def accumulate_team_stats(team_stats, player_stats):
+    """Accumulate player stats into team stats totals."""
+    for key, value in player_stats.items():
+        if key == "championName":
+            continue  # Skip championName as it's tracked separately
+        if key not in team_stats:
+            team_stats[key] = value
+        else:
+            try:
+                team_stats[key] += value
+            except (TypeError, ValueError):
+                team_stats[key] = value  # Handle errors gracefully
+
+def update_team_players_and_champions(team, player_id, champion_name):
+    """Update the team with new player and champion information."""
+    # Update players played
+    if player_id not in team["players_played"]:
+        team["players_played"][player_id] = 1
+    else:
+        team["players_played"][player_id] += 1
+
+    # Update champions played
+    if champion_name:
+        if champion_name not in team["champions_played"]:
+            team["champions_played"][champion_name] = 1
+        else:
+            team["champions_played"][champion_name] += 1
+
+def update_team(db, team, match_id, accumulated_stats):
+    """Update the team with new match and accumulated stats information."""
     teams_collection = db["teams"]
     
     # Update match history
     team["match_history"].append(match_id)
     
-    # Update roster
-    new_roster_ids = [player["summonerId"] for player in current_roster]
-    for player_id in new_roster_ids:
-        if player_id not in team["current_roster"]:
-            team["past_roster"].extend([p for p in team["current_roster"] if p not in team["past_roster"]])
-            team["current_roster"] = new_roster_ids
-    
+    # Update team stats totals
+    if "stats_totals" not in team:
+        team["stats_totals"] = accumulated_stats
+    else:
+        for key, value in accumulated_stats.items():
+            if key in team["stats_totals"]:
+                try:
+                    team["stats_totals"][key] += value
+                except (TypeError, ValueError):
+                    team["stats_totals"][key] = value
+            else:
+                team["stats_totals"][key] = value
+
     teams_collection.update_one({"_id": team["_id"]}, {"$set": team})
