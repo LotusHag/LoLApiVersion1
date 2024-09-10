@@ -2,6 +2,7 @@
 
 from pymongo import MongoClient
 from config.settings import MONGO_URI, MONGO_DB
+from bson.objectid import ObjectId
 
 def get_database():
     """Connect to MongoDB and return the database object."""
@@ -21,11 +22,12 @@ def get_or_create_team(db, team_name, division, split):
             "split": split,
             "division": division,
             "current_roster": [],
-            "past_roster": [],
             "match_history": [],
             "stats_totals": {},  # Store total stats here
-            "champions_played": {},  # Track champions played by the team
-            "players_played": {}  # Track players who have played for the team
+            "champions_played": {},  # Track the number of times each champion is played
+            "players_played": {},  # Track the players who have played for the team with counts
+            "bans_against": {},  # Track the number of times champions are banned against the team
+            "bans_made": {}  # Track the number of times the team has banned champions
         }
         team_id = teams_collection.insert_one(team).inserted_id
         team["_id"] = team_id
@@ -34,38 +36,49 @@ def get_or_create_team(db, team_name, division, split):
     
     return team
 
-def get_or_create_player(db, summoner_id, summoner_name):
+def get_or_create_player(db, summoner_id, summoner_name, riot_id_name, riot_id_tagline):
     """Retrieve or create a player in the database."""
     players_collection = db["players"]
 
-    # Ensure summoner_id is stored as a string, not ObjectId
     if not isinstance(summoner_id, str):
         print(f"Error: summoner_id is not a string: {summoner_id}")
         return None
 
-    # Try to find player by summoner_id
     player = players_collection.find_one({"summoner_ids": summoner_id})
 
+    # Combine riot_id_name and riot_id_tagline to create a unique identifier string
+    riot_id_pair = f"{riot_id_name}#{riot_id_tagline}"
+
     if not player:
-        # Creating new player with correct summoner_ids field format
         player = {
-            "summoner_ids": [summoner_id],  # Ensure this is always a list
+            "summoner_ids": [summoner_id],
             "summoner_names": [summoner_name],
+            "riotIDPairs": [riot_id_pair] if riot_id_name and riot_id_tagline else [],
             "current_teams": [],
-            "past_teams": [],
             "match_history": [],
-            "stats_totals": {},  # Store all stats as totals
-            "champions_played": {},  # Track how often champions are played
-            "positions_played": {}  # Track how often each position is played
+            "stats_totals": {},
+            "champions_played": {},
+            "positions_played": {}
         }
         player_id = players_collection.insert_one(player).inserted_id
         player["_id"] = player_id
-        print(f"New player created: {player}")  # Debug: Show player details when created
+        print(f"New player created: {player}")
     else:
         if summoner_name not in player["summoner_names"]:
             player["summoner_names"].append(summoner_name)
-            players_collection.update_one({"_id": player["_id"]}, {"$set": {"summoner_names": player["summoner_names"]}})
-        print(f"Existing player found: {player}")  # Debug: Show player details if found
+        
+        # Only add the riot_id_pair if it's valid and not already in the list
+        if riot_id_name and riot_id_tagline and riot_id_pair not in player.get("riotIDPairs", []):
+            player.setdefault("riotIDPairs", []).append(riot_id_pair)
+
+        players_collection.update_one(
+            {"_id": player["_id"]}, 
+            {"$set": {
+                "summoner_names": player["summoner_names"],
+                "riotIDPairs": player["riotIDPairs"]
+            }}
+        )
+        print(f"Existing player updated: {player}")
     
     return player
 
@@ -73,27 +86,28 @@ def update_player(db, player, match_id, team_id, stats):
     """Update the player with new match, team, and stats information."""
     players_collection = db["players"]
     
-    # Update match history with match ID only
     player["match_history"].append(match_id)
     
-    # Update teams
     if team_id not in player["current_teams"]:
-        player["past_teams"].extend([t for t in player["current_teams"] if t not in player["past_teams"]])
         player["current_teams"].append(team_id)
+
+    # Filter out unnecessary stats like items and profile icon
+    filtered_stats = {k: v for k, v in stats.items() if k not in {"items", "profileIcon"}}
+
+    for key, value in filtered_stats.items():
+        if key not in {"championName", "individualPosition", "lane", 
+                       "role", "summonerId", "summonerName", "teamPosition", 
+                       "puuid", "item0", "item1", "item2", "item3", "item4", "item5",
+                       "item6", "playerAugment1", "playerAugment2", "playerAugment3",
+                       "playerAugment4", "playerAugment5", "playerAugment6", "playerSubteamId", "riotIdGameName", "riotIdTagline"}:
+            if key not in player["stats_totals"]:
+                player["stats_totals"][key] = value
+            else:
+                try:
+                    player["stats_totals"][key] += value
+                except (TypeError, ValueError):
+                    player["stats_totals"][key] = value
     
-    # Update stats totals, excluding championName
-    for key, value in stats.items():
-        if key == "championName":
-            continue  # Skip championName as it's tracked separately
-        if key not in player["stats_totals"]:
-            player["stats_totals"][key] = value
-        else:
-            try:
-                player["stats_totals"][key] += value
-            except (TypeError, ValueError):
-                player["stats_totals"][key] = value  # Handle conversion issues
-    
-    # Track champions played
     champion_name = stats.get("championName")
     if champion_name:
         if champion_name not in player["champions_played"]:
@@ -101,7 +115,6 @@ def update_player(db, player, match_id, team_id, stats):
         else:
             player["champions_played"][champion_name] += 1
     
-    # Track positions played
     position = stats.get("individualPosition")
     if position:
         if position not in player["positions_played"]:
@@ -115,95 +128,124 @@ def store_match_data(db, processed_data, division, split, match_type, blue_team_
     """Store the entire match data from the Riot API response in MongoDB without filtering any fields."""
     matches_collection = db["matches"]
     
-    # Debugging output to check what is being stored
     print(f"Storing match data: {processed_data}")
 
-    # Store match data and get its ID
     match = {
         "match_id": processed_data["metadata"]["matchId"],
         "division": division,
         "split": split,
         "match_type": match_type,
         "teams": [blue_team_name, red_team_name],
-        "players": [],  # Will store references to Player objects
-        "data": processed_data  # Store all the data without filtering
+        "players": [],
+        "data": processed_data
     }
     match_id = matches_collection.insert_one(match).inserted_id
 
-    # Process teams
     blue_team = get_or_create_team(db, blue_team_name, division, split)
     red_team = get_or_create_team(db, red_team_name, division, split)
 
-    # Process players and build current roster lists
     blue_team_roster = []
     red_team_roster = []
-    blue_team_stats = {}  # Accumulate stats for the blue team
-    red_team_stats = {}   # Accumulate stats for the red team
+    blue_team_stats = {}
+    red_team_stats = {}
 
     for participant in processed_data["info"]["participants"]:
-        # Retrieve or create player with debug information
-        player = get_or_create_player(db, participant["summonerId"], participant["summonerName"])
+        # Extract riotIDGameName and riotIDTagline directly from the API data
+        riot_id_name = participant.get("riotIdGameName", "")
+        riot_id_tagline = participant.get("riotIdTagline", "")
+        
+        player = get_or_create_player(db, participant["summonerId"], participant["summonerName"], riot_id_name, riot_id_tagline)
         print(f"Processing player: {participant['summonerName']} with ID: {participant['summonerId']}")
 
         team_id = blue_team["_id"] if participant["teamId"] == 100 else red_team["_id"]
         update_player(db, player, match_id, team_id, participant)
         
-        # Link player object to match
         match["players"].append(player["_id"])
 
-        # Assign player to the correct team roster and accumulate team stats
-        if participant["teamId"] == 100:  # Blue team
+        if participant["teamId"] == 100:
             blue_team_roster.append(player["_id"])
             accumulate_team_stats(blue_team_stats, participant)
-            update_team_players_and_champions(blue_team, player["_id"], participant["championName"])
-        elif participant["teamId"] == 200:  # Red team
+            track_team_champion_and_player(blue_team, participant, player["_id"])
+        elif participant["teamId"] == 200:
             red_team_roster.append(player["_id"])
             accumulate_team_stats(red_team_stats, participant)
-            update_team_players_and_champions(red_team, player["_id"], participant["championName"])
+            track_team_champion_and_player(red_team, participant, player["_id"])
     
-    # Update match document with player links
+    track_bans(processed_data, blue_team, red_team)
+    
     matches_collection.update_one({"_id": match_id}, {"$set": {"players": match["players"]}})
     
-    # Update teams with the new match and accumulated stats
-    update_team(db, blue_team, match_id, blue_team_stats)
-    update_team(db, red_team, match_id, red_team_stats)
+    update_team(db, blue_team, match_id, blue_team_roster, blue_team_stats)
+    update_team(db, red_team, match_id, red_team_roster, red_team_stats)
 
 def accumulate_team_stats(team_stats, player_stats):
     """Accumulate player stats into team stats totals."""
     for key, value in player_stats.items():
-        if key == "championName":
-            continue  # Skip championName as it's tracked separately
-        if key not in team_stats:
-            team_stats[key] = value
-        else:
-            try:
-                team_stats[key] += value
-            except (TypeError, ValueError):
-                team_stats[key] = value  # Handle errors gracefully
+        if key not in {"championName", "individualPosition", "lane", 
+                       "role", "summonerId", "summonerName", "teamPosition", "puuid"}:
+            if key not in team_stats:
+                team_stats[key] = value
+            else:
+                try:
+                    team_stats[key] += value
+                except (TypeError, ValueError):
+                    team_stats[key] = value
 
-def update_team_players_and_champions(team, player_id, champion_name):
-    """Update the team with new player and champion information."""
-    # Update players played
-    if player_id not in team["players_played"]:
-        team["players_played"][player_id] = 1
-    else:
-        team["players_played"][player_id] += 1
-
-    # Update champions played
+def track_team_champion_and_player(team, player_stats, player_id):
+    """Track the champions and players for the team."""
+    champion_name = player_stats.get("championName")
     if champion_name:
         if champion_name not in team["champions_played"]:
             team["champions_played"][champion_name] = 1
         else:
             team["champions_played"][champion_name] += 1
+    
+    if player_id not in team["players_played"]:
+        team["players_played"][str(player_id)] = 1
+    else:
+        team["players_played"][str(player_id)] += 1
 
-def update_team(db, team, match_id, accumulated_stats):
-    """Update the team with new match and accumulated stats information."""
+def track_bans(processed_data, blue_team, red_team):
+    """Track bans against and made by each team."""
+    teams_data = processed_data.get("info", {}).get("teams", [])
+    if len(teams_data) == 2:
+        # Blue Team Bans
+        for ban in teams_data[0].get("bans", []):
+            champion_id = ban.get("championId")
+            if champion_id is not None:
+                if str(champion_id) not in blue_team["bans_made"]:
+                    blue_team["bans_made"][str(champion_id)] = 1
+                else:
+                    blue_team["bans_made"][str(champion_id)] += 1
+                
+                if str(champion_id) not in red_team["bans_against"]:
+                    red_team["bans_against"][str(champion_id)] = 1
+                else:
+                    red_team["bans_against"][str(champion_id)] += 1
+
+        # Red Team Bans
+        for ban in teams_data[1].get("bans", []):
+            champion_id = ban.get("championId")
+            if champion_id is not None:
+                if str(champion_id) not in red_team["bans_made"]:
+                    red_team["bans_made"][str(champion_id)] = 1
+                else:
+                    red_team["bans_made"][str(champion_id)] += 1
+
+                if str(champion_id) not in blue_team["bans_against"]:
+                    blue_team["bans_against"][str(champion_id)] = 1
+                else:
+                    blue_team["bans_against"][str(champion_id)] += 1
+
+def update_team(db, team, match_id, current_roster, accumulated_stats):
+    """Update the team with new match, roster, and accumulated stats information."""
     teams_collection = db["teams"]
     
-    # Update match history
     team["match_history"].append(match_id)
     
-    # Update team stats totals
+    new_roster_ids = [str(player_id) for player_id in current_roster]
+    team["current_roster"] = list(set(team["current_roster"] + new_roster_ids))
+    
     if "stats_totals" not in team:
         team["stats_totals"] = accumulated_stats
     else:
