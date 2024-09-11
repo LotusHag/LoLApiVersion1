@@ -38,29 +38,26 @@
         <div class="team blue-team">
           <div class="bans-container">
             {% for ban in match['teams'][0]['bans'] %}
-              <img class="ban-icon" data-champion-id="{{ ban }}" alt="Ban">
+              <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[ban] }}.png" alt="Ban">
             {% endfor %}
           </div>
-          <h4 class="{{ 'winner' if match['teams'][0]['win'] else 'loser' }}">
-            {{ 'Winner' if match['teams'][0]['win'] else 'Loser' }}
-          </h4>
           <div class="player-list">
-            {% for player in match['data']['players'] if player['team_id'] == 100 %}
+            {% for player in match['data']['info']['participants'] if player['teamId'] == 100 %}
             <div class="player">
-              <img class="champion-icon" data-champion-id="{{ player['champion_id'] }}" alt="{{ player['champion_name'] }}">
+              <img class="champion-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[player['championId']] }}.png" alt="{{ player['championName'] }}">
               <div class="player-info">
-                <button class="player-button" onclick="window.location.href='{{ url_for('player_detail', object_id=player['summoner_id']|string) }}'">
-                  {{ player['summoner_name'] }}
+                <button class="player-button" onclick="window.location.href='{{ url_for('player_detail', object_id=player['_id']|string) }}'">
+                  {{ player['summonerName'] }}
                 </button>
                 <div class="player-stats">
                   <span>KDA: {{ player['kills'] }}/{{ player['deaths'] }}/{{ player['assists'] }}</span>
-                  <span class="gold" data-gold="{{ player['gold_earned'] }}">Gold: </span>
-                  <span class="damage" data-damage="{{ player['total_damage_dealt_to_champions'] }}">Damage: </span>
-                  <span>Vision: {{ player['vision_score'] }}</span>
+                  <span class="gold" data-gold="{{ player['goldEarned'] }}">Gold: </span>
+                  <span class="damage" data-damage="{{ player['totalDamageDealtToChampions'] }}">Damage: </span>
+                  <span>Vision: {{ player['visionScore'] }}</span>
                 </div>
                 <div class="items-grid">
-                  {% for i in range(0, 7) %}
-                    <img class="item-icon" data-item-id="{{ player['items'][i] }}" alt="Item" onerror="this.style.display='none';">
+                  {% for i in range(0, 6) %}
+                    <img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/item/{{ itemMap[player['item' ~ i]] }}" alt="Item" onerror="this.style.display='none';">
                   {% endfor %}
                 </div>
               </div>
@@ -73,29 +70,26 @@
         <div class="team red-team">
           <div class="bans-container">
             {% for ban in match['teams'][1]['bans'] %}
-              <img class="ban-icon" data-champion-id="{{ ban }}" alt="Ban">
+              <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[ban] }}.png" alt="Ban">
             {% endfor %}
           </div>
-          <h4 class="{{ 'winner' if match['teams'][1]['win'] else 'loser' }}">
-            {{ 'Winner' if match['teams'][1]['win'] else 'Loser' }}
-          </h4>
           <div class="player-list">
-            {% for player in match['data']['players'] if player['team_id'] == 200 %}
+            {% for player in match['data']['info']['participants'] if player['teamId'] == 200 %}
             <div class="player">
-              <img class="champion-icon" data-champion-id="{{ player['champion_id'] }}" alt="{{ player['champion_name'] }}">
+              <img class="champion-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[player['championId']] }}.png" alt="{{ player['championName'] }}">
               <div class="player-info">
-                <button class="player-button" onclick="window.location.href='{{ url_for('player_detail', object_id=player['summoner_id']|string) }}'">
-                  {{ player['summoner_name'] }}
+                <button class="player-button" onclick="window.location.href='{{ url_for('player_detail', object_id=player['_id']|string) }}'">
+                  {{ player['summonerName'] }}
                 </button>
                 <div class="player-stats">
                   <span>KDA: {{ player['kills'] }}/{{ player['deaths'] }}/{{ player['assists'] }}</span>
-                  <span class="gold" data-gold="{{ player['gold_earned'] }}">Gold: </span>
-                  <span class="damage" data-damage="{{ player['total_damage_dealt_to_champions'] }}">Damage: </span>
-                  <span>Vision: {{ player['vision_score'] }}</span>
+                  <span class="gold" data-gold="{{ player['goldEarned'] }}">Gold: </span>
+                  <span class="damage" data-damage="{{ player['totalDamageDealtToChampions'] }}">Damage: </span>
+                  <span>Vision: {{ player['visionScore'] }}</span>
                 </div>
                 <div class="items-grid">
-                  {% for i in range(0, 7) %}
-                    <img class="item-icon" data-item-id="{{ player['items'][i] }}" alt="Item" onerror="this.style.display='none';">
+                  {% for i in range(0, 6) %}
+                    <img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/item/{{ itemMap[player['item' ~ i]] }}" alt="Item" onerror="this.style.display='none';">
                   {% endfor %}
                 </div>
               </div>
@@ -114,17 +108,20 @@
   let itemMap = {};
   let latestVersion = "";
 
+  // Fetch latest version and then champions and items list dynamically
   async function loadGameData() {
     try {
       const versionResponse = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
       const versions = await versionResponse.json();
       latestVersion = versions[0];
 
+      // Fetch champions and items data from Data Dragon
       const championResponse = await fetch(`https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/en_US/champion.json`);
       const championData = await championResponse.json();
       const itemResponse = await fetch(`https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/en_US/item.json`);
       const itemData = await itemResponse.json();
 
+      // Create mappings for champions and items
       Object.values(championData.data).forEach(champion => {
         championMap[parseInt(champion.key)] = champion.id;
       });
@@ -175,6 +172,7 @@
     }
   }
 
+  // Initialize game data on page load
   document.addEventListener('DOMContentLoaded', loadGameData);
 
   function filterList() {

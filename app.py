@@ -4,6 +4,7 @@ from flask import Flask, render_template, request, redirect, url_for, jsonify
 from bson.objectid import ObjectId
 from src.store_data import get_database
 from datetime import datetime
+import requests  # Import requests to handle HTTP requests
 
 app = Flask(__name__)
 
@@ -11,6 +12,35 @@ def get_db():
     """Get the MongoDB database connection."""
     db = get_database()
     return db
+
+def fetch_latest_version_and_data():
+    """Fetch the latest DataDragon version and champion/item maps."""
+    try:
+        # Fetch the latest version from DataDragon
+        version_response = requests.get('https://ddragon.leagueoflegends.com/api/versions.json')
+        versions = version_response.json()
+        latest_version = versions[0]
+
+        # Fetch champion data
+        champion_response = requests.get(f'https://ddragon.leagueoflegends.com/cdn/{latest_version}/data/en_US/champion.json')
+        champion_data = champion_response.json()
+
+        # Fetch item data
+        item_response = requests.get(f'https://ddragon.leagueoflegends.com/cdn/{latest_version}/data/en_US/item.json')
+        item_data = item_response.json()
+
+        # Create a mapping of champion IDs to champion names
+        champion_map = {int(champ['key']): champ['id'] for champ in champion_data['data'].values()}
+
+        # Create a mapping of item IDs to item image names
+        item_map = {int(item_id): item['image']['full'] for item_id, item in item_data['data'].items()}
+
+        return latest_version, champion_map, item_map
+
+    except Exception as e:
+        print(f"Error fetching DataDragon data: {e}")
+        # Provide fallback values in case of failure
+        return "latest", {}, {}
 
 @app.route('/')
 def index():
@@ -37,6 +67,10 @@ def list_matches():
     """List all matches."""
     db = get_db()
     matches = list(db['matches'].find())
+
+    # Fetch the latest version, champion map, and item map
+    latest_version, champion_map, item_map = fetch_latest_version_and_data()
+
     for match in matches:
         game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
         if game_start_timestamp:
@@ -63,7 +97,7 @@ def list_matches():
             match['teams'][0]['win'] = teams_data[0].get('win', False)
             match['teams'][1]['win'] = teams_data[1].get('win', False)
 
-    return render_template('matches_list.html', data=matches)
+    return render_template('matches_list.html', data=matches, latestVersion=latest_version, championMap=champion_map, itemMap=item_map)
 
 @app.route('/general_data/players')
 def list_players():
