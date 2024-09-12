@@ -1,5 +1,3 @@
-<!-- templates/matches_list.html -->
-
 {% extends 'base.html' %}
 
 {% block content %}
@@ -13,15 +11,24 @@
     <div class="data-bar" onclick="toggleDetails('{{ match['_id'] }}')">
       <span class="data-summary">
         {% if match.get('teams') and match['teams'][0] and match['teams'][1] %}
-          <button class="team-button {{ 'winner' if match['teams'][0]['win'] else 'loser' }}" 
+          <!-- Determine win status based on team data from Riot API structure -->
+          {% set blue_team_win = match['data']['info']['teams'][0]['win'] %}
+          {% set red_team_win = match['data']['info']['teams'][1]['win'] %}
+
+          <!-- Blue Team Button -->
+          <button class="team-button {{ 'winner-team' if blue_team_win else 'loser-team' }}"
                   onclick="event.stopPropagation(); window.location.href='{{ url_for('team_detail', object_id=match['teams'][0]['_id']|string) }}'">
             {{ match['teams'][0]['team_name'] }}
           </button>
+
           vs
-          <button class="team-button {{ 'winner' if match['teams'][1]['win'] else 'loser' }}" 
+
+          <!-- Red Team Button -->
+          <button class="team-button {{ 'winner-team' if red_team_win else 'loser-team' }}"
                   onclick="event.stopPropagation(); window.location.href='{{ url_for('team_detail', object_id=match['teams'][1]['_id']|string) }}'">
             {{ match['teams'][1]['team_name'] }}
           </button>
+
           on {{ match.get('date', 'Date not available') }}
           <span class="badge">{{ match['split'] }} - {{ match['division'] }}</span>
         {% else %}
@@ -37,8 +44,8 @@
         <!-- Blue Team Section -->
         <div class="team blue-team">
           <div class="bans-container">
-            {% for ban in match['teams'][0]['bans'] %}
-              <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[ban] }}.png" alt="Ban">
+            {% for ban in match['data']['info']['teams'][0]['bans'] %}
+              <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[ban['championId']] }}.png" alt="Ban">
             {% endfor %}
           </div>
           <div class="player-list">
@@ -69,8 +76,8 @@
         <!-- Red Team Section -->
         <div class="team red-team">
           <div class="bans-container">
-            {% for ban in match['teams'][1]['bans'] %}
-              <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[ban] }}.png" alt="Ban">
+            {% for ban in match['data']['info']['teams'][1]['bans'] %}
+              <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[ban['championId']] }}.png" alt="Ban">
             {% endfor %}
           </div>
           <div class="player-list">
@@ -104,24 +111,17 @@
 </div>
 
 <script>
-  let championMap = {};
-  let itemMap = {};
-  let latestVersion = "";
-
-  // Fetch latest version and then champions and items list dynamically
   async function loadGameData() {
     try {
       const versionResponse = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
       const versions = await versionResponse.json();
-      latestVersion = versions[0];
+      const latestVersion = versions[0];
 
-      // Fetch champions and items data from Data Dragon
       const championResponse = await fetch(`https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/en_US/champion.json`);
       const championData = await championResponse.json();
       const itemResponse = await fetch(`https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/en_US/item.json`);
       const itemData = await itemResponse.json();
 
-      // Create mappings for champions and items
       Object.values(championData.data).forEach(champion => {
         championMap[parseInt(champion.key)] = champion.id;
       });
@@ -130,49 +130,12 @@
         itemMap[parseInt(id)] = item.image.full;
       });
 
-      document.querySelectorAll('.champion-icon').forEach(img => {
-        const championId = img.getAttribute('data-champion-id');
-        const championName = championMap[championId];
-        if (championName) {
-          img.src = `https://ddragon.leagueoflegends.com/cdn/${latestVersion}/img/champion/${championName}.png`;
-        }
-      });
-
-      document.querySelectorAll('.item-icon').forEach(img => {
-        const itemId = img.getAttribute('data-item-id');
-        const itemImage = itemMap[itemId];
-        if (itemImage) {
-          img.src = `https://ddragon.leagueoflegends.com/cdn/${latestVersion}/img/item/${itemImage}`;
-        } else {
-          img.style.display = 'none';
-        }
-      });
-
-      document.querySelectorAll('.ban-icon').forEach(img => {
-        const championId = img.getAttribute('data-champion-id');
-        const championName = championMap[championId];
-        if (championName) {
-          img.src = `https://ddragon.leagueoflegends.com/cdn/${latestVersion}/img/champion/${championName}.png`;
-        }
-      });
-
-      document.querySelectorAll('.damage').forEach(span => {
-        const damageValue = span.getAttribute('data-damage');
-        span.textContent += formatValue(damageValue);
-      });
-
-      document.querySelectorAll('.gold').forEach(span => {
-        const goldValue = span.getAttribute('data-gold');
-        span.textContent += formatValue(goldValue);
-      });
-
       console.log("Game data loaded successfully.");
     } catch (error) {
       console.error('Error fetching game data:', error);
     }
   }
 
-  // Initialize game data on page load
   document.addEventListener('DOMContentLoaded', loadGameData);
 
   function filterList() {
@@ -189,10 +152,6 @@
   function toggleDetails(itemId) {
     const details = document.getElementById(`details-${itemId}`);
     details.style.display = details.style.display === 'none' ? 'block' : 'none';
-  }
-
-  function formatValue(value) {
-    return (value / 1000).toFixed(1) + 'K';
   }
 </script>
 
@@ -243,39 +202,15 @@
     cursor: pointer;
     font-size: 14px;
     margin: 0 5px;
-    position: relative;
   }
 
-  .player-button {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 5px;
-    background-color: #6c757d;
-    color: white;
-    cursor: pointer;
-    font-size: 12px;
-  }
-
-  .player-button:hover {
-    background-color: #5a6268;
-  }
-
-  .badge {
-    background-color: #ffc107;
-    color: #333;
-    font-size: 10px;
-    padding: 2px 5px;
-    border-radius: 3px;
-    margin-left: 10px;
-  }
-
-  .winner {
-    background-color: #d4edda;
+  .winner-team {
+    background-color: #d4edda; /* Light green for winning team */
     color: #155724;
   }
 
-  .loser {
-    background-color: #f8d7da;
+  .loser-team {
+    background-color: #f8d7da; /* Light red for losing team */
     color: #721c24;
   }
 
@@ -349,8 +284,8 @@
 
   .items-grid {
     display: grid;
-    grid-template-columns: repeat(3, 24px);
-    grid-gap: 4px;
+    grid-template-columns: repeat(6, 24px); /* 6 items per row */
+    grid-gap: 2px; /* Smaller gap between items */
     margin-top: 5px;
   }
 

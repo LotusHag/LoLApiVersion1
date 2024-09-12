@@ -1,10 +1,8 @@
-# app.py
-
 from flask import Flask, render_template, request, redirect, url_for, jsonify
 from bson.objectid import ObjectId
 from src.store_data import get_database
 from datetime import datetime
-import requests  # Import requests to handle HTTP requests
+import requests
 
 app = Flask(__name__)
 
@@ -90,12 +88,11 @@ def list_matches():
                 resolved_teams.append({"team_name": team_id})
         match['teams'] = resolved_teams
 
-        teams_data = match.get('data', {}).get('teams', [])
-        if teams_data:
-            match['teams'][0]['bans'] = teams_data[0].get('bans', [])
-            match['teams'][1]['bans'] = teams_data[1].get('bans', [])
-            match['teams'][0]['win'] = teams_data[0].get('win', False)
-            match['teams'][1]['win'] = teams_data[1].get('win', False)
+        # Ensure participant data includes player ObjectId
+        for participant in match['data']['info']['participants']:
+            player = db['players'].find_one({"summoner_ids": participant["summonerId"]})
+            if player:
+                participant['_id'] = player['_id']  # Assign ObjectId to the participant
 
     return render_template('matches_list.html', data=matches, latestVersion=latest_version, championMap=champion_map, itemMap=item_map)
 
@@ -163,8 +160,6 @@ def list_teams():
             if match_teams_data:
                 match['teams'][0]['bans'] = match_teams_data[0].get('bans', [])
                 match['teams'][1]['bans'] = match_teams_data[1].get('bans', [])
-                match['teams'][0]['win'] = match_teams_data[0].get('win', False)
-                match['teams'][1]['win'] = match_teams_data[1].get('win', False)
 
         team['match_history'] = matches
 
@@ -257,16 +252,16 @@ def team_detail(object_id):
 
         resolved_teams = []
         for team_id in match.get('teams', []):
-            resolved_team = db['teams'].find_one({"_id": ObjectId(team_id)}) if ObjectId.is_valid(team_id) else {"team_name": team_id}
-            resolved_teams.append(resolved_team)
+            resolved_team = db['teams'].find_one(
+                {"_id": ObjectId(team_id)} if ObjectId.is_valid(team_id) else {"team_name": team_id}
+            )
+            resolved_teams.append(resolved_team if resolved_team else {"team_name": team_id})
         match['teams'] = resolved_teams
 
         match_teams_data = match.get('data', {}).get('teams', [])
         if match_teams_data:
             match['teams'][0]['bans'] = match_teams_data[0].get('bans', [])
             match['teams'][1]['bans'] = match_teams_data[1].get('bans', [])
-            match['teams'][0]['win'] = match_teams_data[0].get('win', False)
-            match['teams'][1]['win'] = match_teams_data[1].get('win', False)
 
     team['match_history'] = matches
 
