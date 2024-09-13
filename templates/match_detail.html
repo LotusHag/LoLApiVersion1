@@ -1,22 +1,25 @@
-<!-- templates/match_detail.html -->
-
 {% extends 'base.html' %}
+{% import 'postgame_template.html' as postgame %}
 
 {% block content %}
 <h2>Match Detail</h2>
 <p><strong>Match:</strong> 
     <a href="{{ url_for('team_detail', object_id=match_detail['teams'][0]['_id']) }}">
-      {{ match_detail['teams'][0]['team_name'] }}
+      {{ match_detail['teams'][0].get('team_name', 'Unknown Team') }}
     </a> vs 
     <a href="{{ url_for('team_detail', object_id=match_detail['teams'][1]['_id']) }}">
-      {{ match_detail['teams'][1]['team_name'] }}
+      {{ match_detail['teams'][1].get('team_name', 'Unknown Team') }}
     </a>
 </p>
 <p><strong>Date:</strong> {{ match_detail['date'] }}</p>
-<p><strong>Split:</strong> {{ match_detail['split'] }} | <strong>Division:</strong> {{ match_detail['division'] }}</p>
+<p><strong>Split:</strong> {{ match_detail.get('split', 'N/A') }} | <strong>Division:</strong> {{ match_detail.get('division', 'N/A') }}</p>
 <p><strong>Winner:</strong> 
-    <a href="{{ url_for('team_detail', object_id=(match_detail['teams'][0]['_id'] if match_detail['teams'][0]['win'] else match_detail['teams'][1]['_id'])) }}">
-      {{ match_detail['teams'][0]['team_name'] if match_detail['teams'][0]['win'] else match_detail['teams'][1]['team_name'] }}
+    <a href="{{ url_for('team_detail', object_id=(match_detail['teams'][0]['_id'] if match_detail['teams'][0].get('win') else match_detail['teams'][1]['_id'])) }}">
+      {{ match_detail['teams'][0].get('team_name') if match_detail['teams'][0].get('win') else match_detail['teams'][1].get('team_name') }}
     </a>
 </p>
+
+<!-- Render the detailed match stats using the macro from postgame_template -->
+{{ postgame.postgame_stats(match_detail) }}
+
 {% endblock %}

@@ -1,0 +1,171 @@
+{% macro postgame_stats(match) %}
+<div class="postgame-container">
+    <table class="postgame-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th colspan="2">Blue Side</th>
+                <th colspan="2">Red Side</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in range(5) %}
+            <tr class="player-row">
+                {% if loop.first %}
+                <td class="match-date" rowspan="5">
+                    <span>{{ match.date | date_format }}</span>
+                </td>
+                {% endif %}
+                {{ player_stats(match['players'][i]) }}
+                {{ player_stats(match['players'][i+5]) }}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endmacro %}
+
+{% macro player_stats(player) %}
+<td class="player-stats {% if player['team_id'] == 100 %}player-stats--WIN{% else %}player-stats--LOSE{% endif %}">
+    <div class="player-info">
+        <div class="champion">
+            <img src="https://ddragon.leagueoflegends.com/cdn/13.18.1/img/champion/{{ player['championName'] }}.png" alt="{{ player['championName'] }}" class="champion-icon">
+            <span class="level">{{ player.get('championLevel', 1) }}</span>
+        </div>
+        <div class="summoner-name">
+            <a href="{{ url_for('player_detail', object_id=player['_id']) }}">{{ player.get('summonerName', 'Unknown') }}</a>
+        </div>
+        <div class="tier">{{ player.get('tier', 'N/A') }}</div>
+    </div>
+    <div class="player-details">
+        <div class="kda">
+            <span>{{ player.get('kills', 0) }}/{{ player.get('deaths', 0) }}/{{ player.get('assists', 0) }}</span>
+            <span>({{ player.get('killParticipation', 0) }}%)</span>
+            <span>{{ player.get('kdaRatio', 0) }}:1</span>
+        </div>
+        <div class="damage">
+            <div class="damage-bar">
+                <div class="damage-dealt" style="width: {{ player.get('damageDealtPercentage', 0) }}%;" title="Damage Dealt: {{ player.get('totalDamageDealtToChampions', 0) | number_format }}"></div>
+            </div>
+            <div class="damage-bar">
+                <div class="damage-taken" style="width: {{ player.get('damageTakenPercentage', 0) }}%;" title="Damage Taken: {{ player.get('totalDamageTaken', 0) | number_format }}"></div>
+            </div>
+        </div>
+        <div class="cs-vision">
+            <span>{{ player.get('cs', 0) }} CS ({{ player.get('csPerMinute', 0) }}/m)</span>
+            <span>Vision: {{ player.get('visionScore', 0) }} ({{ player.get('wardsPlaced', 0) }}/{{ player.get('wardsKilled', 0) }})</span>
+        </div>
+    </div>
+</td>
+<td class="player-items">
+    <div class="items-grid">
+        {% for item in player['items'] %}
+        {% if item %}
+        <div class="item">
+            <img src="https://ddragon.leagueoflegends.com/cdn/13.18.1/img/item/{{ item }}.png" alt="Item" class="item-icon">
+        </div>
+        {% else %}
+        <div class="item"></div>
+        {% endif %}
+        {% endfor %}
+    </div>
+    <div class="spells-runes">
+        {% for spell in player.get('spells', []) %}
+        <img src="{{ spell['icon_url'] }}" alt="{{ spell['name'] }}" class="spell">
+        {% endfor %}
+        {% for rune in player.get('runes', []) %}
+        <img src="{{ rune['icon_url'] }}" alt="{{ rune['name'] }}" class="rune">
+        {% endfor %}
+    </div>
+</td>
+{% endmacro %}
+
+<style>
+    .postgame-container {
+        font-family: Arial, sans-serif;
+        margin: 20px 0;
+    }
+    .postgame-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #f9f9f9;
+    }
+    .postgame-table th, .postgame-table td {
+        padding: 10px;
+        border: 1px solid #ddd;
+    }
+    .player-stats {
+        display: flex;
+        align-items: center;
+    }
+    .player-stats--WIN {
+        background-color: #e8f5e9;
+    }
+    .player-stats--LOSE {
+        background-color: #ffebee;
+    }
+    .player-info {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-right: 10px;
+    }
+    .champion {
+        position: relative;
+    }
+    .champion-icon {
+        width: 24px; /* Match the size of item icons */
+        height: 24px;
+        border-radius: 50%;
+    }
+    .level {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        background-color: rgba(0,0,0,0.7);
+        color: white;
+        font-size: 10px;
+        padding: 1px 3px;
+        border-radius: 2px;
+    }
+    .summoner-name {
+        font-weight: bold;
+        margin-top: 5px;
+    }
+    .tier {
+        font-size: 12px;
+        color: #666;
+    }
+    .player-details {
+        flex-grow: 1;
+    }
+    .kda, .cs-vision {
+        font-size: 12px;
+        margin-bottom: 5px;
+    }
+    .damage-bar {
+        height: 4px;
+        background-color: #e0e0e0;
+        margin-bottom: 2px;
+    }
+    .damage-dealt {
+        background-color: #4caf50;
+    }
+    .damage-taken {
+        background-color: #f44336;
+    }
+    .items-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr); /* 6 columns for items */
+        gap: 2px;
+        margin-bottom: 5px;
+    }
+    .item-icon, .spell, .rune {
+        width: 24px;
+        height: 24px;
+    }
+    .spells-runes {
+        display: flex;
+        justify-content: space-between;
+    }
+</style>

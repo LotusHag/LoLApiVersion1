@@ -3,8 +3,31 @@ from bson.objectid import ObjectId
 from src.store_data import get_database
 from datetime import datetime
 import requests
+import locale
 
 app = Flask(__name__)
+
+# Set locale for number formatting
+locale.setlocale(locale.LC_ALL, '')
+
+# Custom filter to format numbers with commas
+@app.template_filter('number_format')
+def number_format(value):
+    try:
+        return locale.format_string("%d", value, grouping=True)
+    except (ValueError, TypeError):
+        return value
+
+# Custom filter to format dates
+@app.template_filter('date_format')
+def date_format(value, format='%Y-%m-%d %H:%M:%S'):
+    if isinstance(value, datetime):
+        return value.strftime(format)
+    return value
+
+# Register the filters with the Flask app
+app.jinja_env.filters['number_format'] = number_format
+app.jinja_env.filters['date_format'] = date_format
 
 def get_db():
     """Get the MongoDB database connection."""
@@ -174,9 +197,11 @@ def match_detail(object_id):
     if not match:
         return "Match not found", 404
 
-    game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
+    # Fetch the game start timestamp and format it, if available
+    game_start_timestamp = match.get('data', {}).get('info', {}).get('gameStartTimestamp')
     match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S') if game_start_timestamp else "Date not available"
 
+    # Resolve teams and ensure that team objects are correctly retrieved
     resolved_teams = []
     for team_id in match.get('teams', []):
         try:
@@ -186,24 +211,23 @@ def match_detail(object_id):
             resolved_teams.append({"team_name": team_id})
     match['teams'] = resolved_teams
 
-    if 'info' in match and 'participants' in match['info']:
-        match['players'] = [
-            {
-                "summoner_name": player.get('summonerName'),
-                "team_id": player.get('teamId'),
-                "kda": f"{player.get('kills')}/{player.get('deaths')}/{player.get('assists')}",
-                "damage_dealt": player.get('totalDamageDealtToChampions'),
-                "damage_taken": player.get('totalDamageTaken'),
-                "gold_earned": player.get('goldEarned'),
-                "cs": player.get('totalMinionsKilled'),
-                "items": [player.get(f'item{i}') for i in range(7)],
-                "spells": [player.get(f'summoner{i}Id') for i in range(1, 3)],
-                "champion": player.get('championName')
-            }
-            for player in match['info']['participants']
-        ]
-    else:
-        match['players'] = []
+    # Ensure participant data includes player ObjectId and handle potential missing data
+    match['players'] = []
+    for participant in match.get('data', {}).get('info', {}).get('participants', []):
+        player = db['players'].find_one({"summoner_ids": participant.get("summonerId")})
+        participant_data = {
+            "_id": player['_id'] if player else None,
+            "summonerName": participant.get('summonerName', 'Unknown'),
+            "championName": participant.get('championName', 'Unknown'),
+            "kills": participant.get('kills', 0),
+            "deaths": participant.get('deaths', 0),
+            "assists": participant.get('assists', 0),
+            "totalDamageDealtToChampions": participant.get('totalDamageDealtToChampions', 0),
+            "goldEarned": participant.get('goldEarned', 0),
+            "visionScore": participant.get('visionScore', 0),
+            "items": [participant.get(f'item{i}', None) for i in range(7)]
+        }
+        match['players'].append(participant_data)
 
     return render_template('match_detail.html', match_detail=match)
 
