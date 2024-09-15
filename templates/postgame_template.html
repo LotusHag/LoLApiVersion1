@@ -1,83 +1,78 @@
+<!-- templates/postgame_template.html -->
+
 {% macro postgame_stats(match) %}
 <div class="postgame-container">
-    <div class="teams-wrapper">
+    <div class="team-box blue-team">
         <!-- Blue Team -->
-        <div class="team blue-team">
-            <table class="team-table">
-                <thead>
-                    <tr>
-                        <th colspan="8">
-                            <span class="result {{ 'victory' if match.data.info.teams[0].win else 'defeat' }}">{{ 'Victory' if match.data.info.teams[0].win else 'Defeat' }}</span> (Blue Team)
-                        </th>
-                    </tr>
-                    <tr>
-                        <th>Champion</th>
-                        <th>Name</th>
-                        <th>KDA</th>
-                        <th>Damage</th>
-                        <th>Wards</th>
-                        <th>CS</th>
-                        <th>Items</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for player in match.data.info.participants if player.teamId == 100 %}
-                    <tr class="player-row {{ 'win' if player.win else 'lose' }}">
-                        <td class="champion">
-                            <div style="position: relative; display: flex; align-items: center;">
-                                <div style="position: relative;">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/champion/{{ match.championMap[player.championId] }}.png" width="32" alt="{{ player.championName }}">
-                                    <div class="level">{{ player.champLevel }}</div>
-                                </div>
-                                <div class="spells" style="display: flex; flex-direction: column; margin-left: 2px;">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/spell/{{ match.spellMap.get(player.summoner1Id, 'SummonerFlash') }}.png" width="16" alt="Spell 1">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/spell/{{ match.spellMap.get(player.summoner2Id, 'SummonerFlash') }}.png" width="16" alt="Spell 2">
-                                </div>
-                                <div class="runes" style="display: flex; flex-direction: column; margin-left: 2px;">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.runeMap[player.perks.styles[0].selections[0].perk] }}" width="16" alt="Primary Rune">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.runeStyleMap[player.perks.styles[1].style] }}" width="16" alt="Secondary Rune">
-                                </div>
-                            </div>
-                        </td>
-                        <td class="name">
-                            <div class="summoner-tooltip" style="position: relative;">
-                                <a href="#">{{ player.summonerName }}</a>
-                            </div>
-                            <div class="tier">
-                                <div style="position: relative;">{{ player.individualPosition }}</div>
-                            </div>
-                        </td>
-                        <td class="kda">
-                            <div class="k-d-a">{{ player.kills }}/{{ player.deaths }}/{{ player.assists }}</div>
-                            <div class="kda-ratio">
-                                {% if player.deaths == 0 %}
-                                    Perfect
-                                {% else %}
-                                    {{ ((player.kills + player.assists) / player.deaths)|round(2) }}:1
-                                {% endif %}
-                            </div>
-                        </td>
-                        <td class="damage">
-                            <div>
-                                <div style="position: relative;">
-                                    <div class="dealt">{{ player.totalDamageDealtToChampions|number_format }}</div>
-                                </div>
-                                <div style="position: relative;">
-                                    <div class="taken">{{ player.totalDamageTaken|number_format }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="ward">
+        <table class="team-table">
+            <thead>
+                <tr>
+                    <th colspan="8">
+                        <span class="result {{ 'victory' if match.data.info.teams[0].win else 'defeat' }}">
+                            {{ 'Victory' if match.data.info.teams[0].win else 'Defeat' }}
+                        </span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in match.data.info.participants if player.teamId == 100 %}
+                <tr class="player-row {{ 'win' if player.win else 'lose' }}">
+                    <td class="champion">
+                        <div style="position: relative; display: flex; align-items: center;">
                             <div style="position: relative;">
-                                <div>{{ player.visionScore }}</div>
-                                <div>{{ player.wardsPlaced }} / {{ player.wardsKilled }}</div>
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/champion/{{ match.championMap[player.championId] }}.png" width="32" alt="{{ player.championName }}">
+                                <div class="level">{{ player.champLevel }}</div>
                             </div>
-                        </td>
-                        <td class="cs">
-                            <div>{{ player.totalMinionsKilled + player.neutralMinionsKilled }}</div>
-                            <div>{{ ((player.totalMinionsKilled + player.neutralMinionsKilled) / (match.data.info.gameDuration / 60))|round(1) }}/m</div>
-                        </td>
-                        <td class="items">
+                            <div class="spells" style="display: flex; flex-direction: column; margin-left: 2px;">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/spell/{{ match.spellMap.get(player.summoner1Id, 'SummonerFlash') }}.png" width="16" alt="Spell 1">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/spell/{{ match.spellMap.get(player.summoner2Id, 'SummonerFlash') }}.png" width="16" alt="Spell 2">
+                            </div>
+                            <div class="runes" style="display: flex; flex-direction: column; margin-left: 2px;">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.runeMap[player.perks.styles[0].selections[0].perk] }}" width="16" alt="Primary Rune">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.runeStyleMap[player.perks.styles[1].style] }}" width="16" alt="Secondary Rune">
+                            </div>
+                        </div>
+                    </td>
+                    <td class="name">
+                        <div class="summoner-tooltip" style="position: relative;">
+                            <a href="#">{{ player.summonerName }}</a>
+                        </div>
+                        <div class="tier">
+                            <div style="position: relative;">{{ player.individualPosition }}</div>
+                        </div>
+                    </td>
+                    <td class="kda">
+                        <div class="k-d-a">{{ player.kills }}/{{ player.deaths }}/{{ player.assists }}</div>
+                        <div class="kda-ratio">
+                            {% if player.deaths == 0 %}
+                                Perfect
+                            {% else %}
+                                {{ ((player.kills + player.assists) / player.deaths)|round(2) }}:1
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="damage">
+                        <div>
+                            <div style="position: relative;">
+                                <div class="dealt">{{ player.totalDamageDealtToChampions|number_format }}</div>
+                            </div>
+                            <div style="position: relative;">
+                                <div class="taken">{{ player.totalDamageTaken|number_format }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="ward">
+                        <div style="position: relative;">
+                            <div>{{ player.visionScore }}</div>
+                            <div>{{ player.wardsPlaced }} / {{ player.wardsKilled }}</div>
+                        </div>
+                    </td>
+                    <td class="cs">
+                        <div>{{ player.totalMinionsKilled + player.neutralMinionsKilled }}</div>
+                        <div>{{ ((player.totalMinionsKilled + player.neutralMinionsKilled) / (match.data.info.gameDuration / 60))|round(1) }}/m</div>
+                    </td>
+                    <td class="items">
+                        <div class="item-container">
                             <div class="item-grid">
                                 {% for i in range(0, 6) %}
                                     {% set itemId = player['item' + i|string] %}
@@ -89,45 +84,40 @@
                                         <div class="item-slot no-item"></div>
                                     {% endif %}
                                 {% endfor %}
-                                <div class="item-slot trinket" style="justify-self: {{ 'start' if player.teamId == 100 else 'end' }};">
-                                    {% set trinketId = player['item6'] %}
-                                    {% if trinketId != 0 %}
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/item/{{ match.itemMap[trinketId] }}" width="22" alt="Trinket">
-                                    {% else %}
-                                        <div class="item-slot no-item"></div>
-                                    {% endif %}
-                                </div>
                             </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            <div class="trinket-slot" style="margin-left: -1px;">
+                                {% set trinketId = player['item6'] %}
+                                {% if trinketId != 0 %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/item/{{ match.itemMap[trinketId] }}" width="22" alt="Trinket">
+                                {% else %}
+                                    <div class="item-slot no-item"></div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
+    <div class="team-box red-team">
         <!-- Red Team -->
-        <div class="team red-team">
-            <table class="team-table">
-                <thead>
-                    <tr>
-                        <th colspan="8">
-                            <span class="result {{ 'victory' if match.data.info.teams[1].win else 'defeat' }}">{{ 'Victory' if match.data.info.teams[1].win else 'Defeat' }}</span> (Red Team)
-                        </th>
-                    </tr>
-                    <tr>
-                        <th>Items</th>
-                        <th>CS</th>
-                        <th>Wards</th>
-                        <th>Damage</th>
-                        <th>KDA</th>
-                        <th>Name</th>
-                        <th>Champion</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for player in match.data.info.participants if player.teamId == 200 %}
-                    <tr class="player-row {{ 'win' if player.win else 'lose' }}">
-                        <td class="items">
+        <table class="team-table">
+            <thead>
+                <tr>
+                    <th colspan="8">
+                        <span class="result {{ 'victory' if match.data.info.teams[1].win else 'defeat' }}">
+                            {{ 'Victory' if match.data.info.teams[1].win else 'Defeat' }}
+                        </span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in match.data.info.participants if player.teamId == 200 %}
+                <tr class="player-row {{ 'win' if player.win else 'lose' }}">
+                    <td class="items">
+                        <div class="item-container-reverse">
                             <div class="item-grid">
                                 {% for i in range(0, 6) %}
                                     {% set itemId = player['item' + i|string] %}
@@ -139,90 +129,94 @@
                                         <div class="item-slot no-item"></div>
                                     {% endif %}
                                 {% endfor %}
-                                <div class="item-slot trinket" style="justify-self: {{ 'start' if player.teamId == 100 else 'end' }};">
-                                    {% set trinketId = player['item6'] %}
-                                    {% if trinketId != 0 %}
-                                        <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/item/{{ match.itemMap[trinketId] }}" width="22" alt="Trinket">
-                                    {% else %}
-                                        <div class="item-slot no-item"></div>
-                                    {% endif %}
-                                </div>
                             </div>
-                        </td>
-                        <td class="cs">
-                            <div>{{ player.totalMinionsKilled + player.neutralMinionsKilled }}</div>
-                            <div>{{ ((player.totalMinionsKilled + player.neutralMinionsKilled) / (match.data.info.gameDuration / 60))|round(1) }}/m</div>
-                        </td>
-                        <td class="ward">
-                            <div style="position: relative;">
-                                <div>{{ player.visionScore }}</div>
-                                <div>{{ player.wardsPlaced }} / {{ player.wardsKilled }}</div>
-                            </div>
-                        </td>
-                        <td class="damage">
-                            <div>
-                                <div style="position: relative;">
-                                    <div class="dealt">{{ player.totalDamageDealtToChampions|number_format }}</div>
-                                </div>
-                                <div style="position: relative;">
-                                    <div class="taken">{{ player.totalDamageTaken|number_format }}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td class="kda">
-                            <div class="k-d-a">{{ player.kills }}/{{ player.deaths }}/{{ player.assists }}</div>
-                            <div class="kda-ratio">
-                                {% if player.deaths == 0 %}
-                                    Perfect
+                            <div class="trinket-slot" style="margin-right: -4px;">
+                                {% set trinketId = player['item6'] %}
+                                {% if trinketId != 0 %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/item/{{ match.itemMap[trinketId] }}" width="22" alt="Trinket">
                                 {% else %}
-                                    {{ ((player.kills + player.assists) / player.deaths)|round(2) }}:1
+                                    <div class="item-slot no-item"></div>
                                 {% endif %}
                             </div>
-                        </td>
-                        <td class="name">
-                            <div class="summoner-tooltip" style="position: relative;">
-                                <a href="#">{{ player.summonerName }}</a>
+                        </div>
+                    </td>
+                    <td class="cs">
+                        <div>{{ player.totalMinionsKilled + player.neutralMinionsKilled }}</div>
+                        <div>{{ ((player.totalMinionsKilled + player.neutralMinionsKilled) / (match.data.info.gameDuration / 60))|round(1) }}/m</div>
+                    </td>
+                    <td class="ward">
+                        <div style="position: relative;">
+                            <div>{{ player.visionScore }}</div>
+                            <div>{{ player.wardsPlaced }} / {{ player.wardsKilled }}</div>
+                        </div>
+                    </td>
+                    <td class="damage">
+                        <div>
+                            <div style="position: relative;">
+                                <div class="dealt">{{ player.totalDamageDealtToChampions|number_format }}</div>
                             </div>
-                            <div class="tier">
-                                <div style="position: relative;">{{ player.individualPosition }}</div>
+                            <div style="position: relative;">
+                                <div class="taken">{{ player.totalDamageTaken|number_format }}</div>
                             </div>
-                        </td>
-                        <td class="champion">
-                            <div style="position: relative; display: flex; align-items: center;">
-                                <div class="runes" style="display: flex; flex-direction: column; margin-right: 2px;">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.runeMap[player.perks.styles[0].selections[0].perk] }}" width="16" alt="Primary Rune">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.runeStyleMap[player.perks.styles[1].style] }}" width="16" alt="Secondary Rune">
-                                </div>
-                                <div class="spells" style="display: flex; flex-direction: column; margin-right: 2px;">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/spell/{{ match.spellMap.get(player.summoner1Id, 'SummonerFlash') }}.png" width="16" alt="Spell 1">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/spell/{{ match.spellMap.get(player.summoner2Id, 'SummonerFlash') }}.png" width="16" alt="Spell 2">
-                                </div>
-                                <div style="position: relative;">
-                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/champion/{{ match.championMap[player.championId] }}.png" width="32" alt="{{ player.championName }}">
-                                    <div class="level">{{ player.champLevel }}</div>
-                                </div>
+                        </div>
+                    </td>
+                    <td class="kda">
+                        <div class="k-d-a">{{ player.kills }}/{{ player.deaths }}/{{ player.assists }}</div>
+                        <div class="kda-ratio">
+                            {% if player.deaths == 0 %}
+                                Perfect
+                            {% else %}
+                                {{ ((player.kills + player.assists) / player.deaths)|round(2) }}:1
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="name">
+                        <div class="summoner-tooltip" style="position: relative;">
+                            <a href="#">{{ player.summonerName }}</a>
+                        </div>
+                        <div class="tier">
+                            <div style="position: relative;">{{ player.individualPosition }}</div>
+                        </div>
+                    </td>
+                    <td class="champion">
+                        <div style="position: relative; display: flex; align-items: center;">
+                            <div class="runes" style="display: flex; flex-direction: column; margin-right: 2px;">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.runeMap[player.perks.styles[0].selections[0].perk] }}" width="16" alt="Primary Rune">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/img/{{ match.runeStyleMap[player.perks.styles[1].style] }}" width="16" alt="Secondary Rune">
                             </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            <div class="spells" style="display: flex; flex-direction: column; margin-right: 2px;">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/spell/{{ match.spellMap.get(player.summoner1Id, 'SummonerFlash') }}.png" width="16" alt="Spell 1">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/spell/{{ match.spellMap.get(player.summoner2Id, 'SummonerFlash') }}.png" width="16" alt="Spell 2">
+                            </div>
+                            <div style="position: relative;">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/champion/{{ match.championMap[player.championId] }}.png" width="32" alt="{{ player.championName }}">
+                                <div class="level">{{ player.champLevel }}</div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
     <style>
         .postgame-container {
             display: flex;
-            flex-direction: column;
-            width: 100%;
+            justify-content: center;
+            gap: 20px;
+            padding: 0 20px;
+            flex-wrap: nowrap;
         }
-        .teams-wrapper {
-            display: flex;
-            width: 100%;
-        }
-        .team {
-            width: 50%;
+        .team-box {
+            flex: 0 1 48%;
+            max-width: 850px;
+            min-width: 500px;
             padding: 10px;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-sizing: border-box;
+            overflow: hidden;
         }
         .blue-team {
             background-color: #e0f7ff;
@@ -235,7 +229,6 @@
             border-collapse: collapse;
         }
         .team-table th, .team-table td {
-            border: none; /* Remove borders */
             padding: 5px;
             font-size: 12px;
         }
@@ -245,11 +238,12 @@
         }
         .player-row {
             text-align: center;
-            border-bottom: 1px solid #ccc; /* Only horizontal lines between players */
+            border-bottom: 1px solid #ccc;
         }
         .champion img {
             width: 32px;
             height: 32px;
+            border-radius: 50%;
         }
         .level {
             position: absolute;
@@ -264,37 +258,51 @@
         .spells img, .runes img {
             width: 16px;
             height: 16px;
-            margin-bottom: 2px;
+            margin: 0;
+            border-radius: 2px;
         }
-        .items .item-grid {
+        .items img {
+            border-radius: 4px;
+        }
+        .item-container {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        .item-container-reverse {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            flex-direction: row-reverse; /* Ensures trinket is on the left for red team */
+        }
+        .item-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(2, 1fr);
-            gap: 2px;
+            gap: 1px;
             justify-content: center;
         }
-        .items .item-slot {
+        .trinket-slot {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             width: 22px;
             height: 22px;
-            background-color: #ccc;
+            border: 1px solid #ccc;
+            background-color: #f2f2f2;
+            border-radius: 4px;
+        }
+        .item-slot {
+            width: 22px;
+            height: 22px;
             position: relative;
         }
-        .items .item-slot img {
+        .item-slot img {
             width: 100%;
             height: 100%;
         }
         .items .no-item {
             background-color: transparent;
-        }
-        .item-slot.trinket {
-            width: 22px;
-            height: 22px;
-            background-color: #ccc;
-            position: relative;
-        }
-        .item-slot.trinket img {
-            width: 100%;
-            height: 100%;
         }
         .result.victory {
             color: green;
@@ -303,6 +311,12 @@
         .result.defeat {
             color: red;
             font-weight: bold;
+        }
+        @media (max-width: 1200px) {
+            .team-box {
+                flex: 1 1 100%;
+                max-width: 100%;
+            }
         }
     </style>
 </div>

@@ -1,25 +1,227 @@
+<!-- templates/match_detail.html -->
+
 {% extends 'base.html' %}
 {% import 'postgame_template.html' as postgame %}
 
 {% block content %}
 <h2>Match Detail</h2>
+
+<!-- Match Summary -->
 <p><strong>Match:</strong> 
     <a href="{{ url_for('team_detail', object_id=match_detail['teams'][0]['_id']) }}">
-      {{ match_detail['teams'][0]['team_name'] }}
+        {{ match_detail['teams'][0]['team_name'] }}
     </a> vs 
     <a href="{{ url_for('team_detail', object_id=match_detail['teams'][1]['_id']) }}">
-      {{ match_detail['teams'][1]['team_name'] }}
+        {{ match_detail['teams'][1]['team_name'] }}
     </a>
 </p>
-<p><strong>Date:</strong> {{ match_detail['date'] }}</p>
+<p>
+    <strong>Date:</strong> {{ match_detail['date'] }} | 
+    <strong>Duration:</strong> {{ (match_detail['data']['info']['gameDuration'] // 60) }}:{{ '%02d' % (match_detail['data']['info']['gameDuration'] % 60) }}
+</p>
 <p><strong>Split:</strong> {{ match_detail['split'] }} | <strong>Division:</strong> {{ match_detail['division'] }}</p>
 <p><strong>Winner:</strong> 
     <a href="{{ url_for('team_detail', object_id=(match_detail['teams'][0]['_id'] if match_detail['teams'][0]['win'] else match_detail['teams'][1]['_id'])) }}">
-      {{ match_detail['teams'][0]['team_name'] if match_detail['teams'][0]['win'] else match_detail['teams'][1]['team_name'] }}
+        {{ match_detail['teams'][0]['team_name'] if match_detail['teams'][0]['win'] else match_detail['teams'][1]['team_name'] }}
     </a>
 </p>
 
 <!-- Render Post-Game Stats Table -->
 {{ postgame.postgame_stats(match_detail) }}
+
+<!-- Bans Display -->
+<div class="bans-container">
+    <div class="bans-section">
+        <!-- Blue Team Bans -->
+        <div class="team-bans blue-bans">
+            <div class="bans-icons">
+                <!-- First three bans -->
+                {% for ban in match_detail['data']['info']['teams'][0]['bans'][:3] %}
+                    <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ match_detail.latestVersion }}/img/champion/{{ match_detail.championMap[ban['championId']] }}.png" alt="Ban">
+                {% endfor %}
+                <span class="ban-separator"></span>
+                <!-- Last two bans -->
+                {% for ban in match_detail['data']['info']['teams'][0]['bans'][3:] %}
+                    <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ match_detail.latestVersion }}/img/champion/{{ match_detail.championMap[ban['championId']] }}.png" alt="Ban">
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Red Team Bans -->
+        <div class="team-bans red-bans">
+            <div class="bans-icons">
+                <!-- First three bans -->
+                {% for ban in match_detail['data']['info']['teams'][1]['bans'][:3] %}
+                    <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ match_detail.latestVersion }}/img/champion/{{ match_detail.championMap[ban['championId']] }}.png" alt="Ban">
+                {% endfor %}
+                <span class="ban-separator"></span>
+                <!-- Last two bans -->
+                {% for ban in match_detail['data']['info']['teams'][1]['bans'][3:] %}
+                    <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ match_detail.latestVersion }}/img/champion/{{ match_detail.championMap[ban['championId']] }}.png" alt="Ban">
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Objectives Comparison Bar -->
+<div class="objectives-bar">
+    <div class="objectives-container">
+        <!-- First Tower -->
+        <div class="objective">
+            <div class="objective-title">First Tower</div>
+            <div class="objective-bar-container">
+                <span class="objective-value blue">{{ match_detail['data']['info']['teams'][0]['objectives']['tower']['kills'] }}</span>
+                <div class="objective-bar">
+                    <div class="blue-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][0]['objectives']['tower']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['tower']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['tower']['kills']) }}%;"></div>
+                    <div class="red-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][1]['objectives']['tower']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['tower']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['tower']['kills']) }}%;"></div>
+                </div>
+                <span class="objective-value red">{{ match_detail['data']['info']['teams'][1]['objectives']['tower']['kills'] }}</span>
+            </div>
+        </div>
+
+        <!-- First Inhibitor -->
+        <div class="objective">
+            <div class="objective-title">First Inhibitor</div>
+            <div class="objective-bar-container">
+                <span class="objective-value blue">{{ match_detail['data']['info']['teams'][0]['objectives']['inhibitor']['kills'] }}</span>
+                <div class="objective-bar">
+                    <div class="blue-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][0]['objectives']['inhibitor']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['inhibitor']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['inhibitor']['kills']) }}%;"></div>
+                    <div class="red-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][1]['objectives']['inhibitor']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['inhibitor']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['inhibitor']['kills']) }}%;"></div>
+                </div>
+                <span class="objective-value red">{{ match_detail['data']['info']['teams'][1]['objectives']['inhibitor']['kills'] }}</span>
+            </div>
+        </div>
+
+        <!-- Dragons -->
+        <div class="objective">
+            <div class="objective-title">Dragons</div>
+            <div class="objective-bar-container">
+                <span class="objective-value blue">{{ match_detail['data']['info']['teams'][0]['objectives']['dragon']['kills'] }}</span>
+                <div class="objective-bar">
+                    <div class="blue-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][0]['objectives']['dragon']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['dragon']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['dragon']['kills']) }}%;"></div>
+                    <div class="red-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][1]['objectives']['dragon']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['dragon']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['dragon']['kills']) }}%;"></div>
+                </div>
+                <span class="objective-value red">{{ match_detail['data']['info']['teams'][1]['objectives']['dragon']['kills'] }}</span>
+            </div>
+        </div>
+
+        <!-- Rift Heralds -->
+        <div class="objective">
+            <div class="objective-title">Rift Heralds</div>
+            <div class="objective-bar-container">
+                <span class="objective-value blue">{{ match_detail['data']['info']['teams'][0]['objectives']['riftHerald']['kills'] }}</span>
+                <div class="objective-bar">
+                    <div class="blue-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][0]['objectives']['riftHerald']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['riftHerald']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['riftHerald']['kills']) }}%;"></div>
+                    <div class="red-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][1]['objectives']['riftHerald']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['riftHerald']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['riftHerald']['kills']) }}%;"></div>
+                </div>
+                <span class="objective-value red">{{ match_detail['data']['info']['teams'][1]['objectives']['riftHerald']['kills'] }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bans-container {
+        margin-top: 20px;
+        text-align: center;
+    }
+
+    .bans-section {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+
+    .team-bans {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: -10px;
+    }
+
+    .bans-icons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .ban-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    .ban-separator {
+        width: 10px;
+    }
+
+    .objectives-bar {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #f4f4f4;
+        border-radius: 8px;
+        text-align: center;
+        margin-top: -20px;
+    }
+
+    .objectives-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .objective {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .objective-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+        font-size: 16px;
+    }
+
+    .objective-bar-container {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .objective-bar {
+        position: relative;
+        flex: 1;
+        height: 20px;
+        background-color: #ddd;
+        overflow: hidden;
+        display: flex;
+    }
+
+    .blue-bar {
+        background-color: #1f8ecd;
+        height: 100%;
+    }
+
+    .red-bar {
+        background-color: #ee5a52;
+        height: 100%;
+    }
+
+    .objective-value {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .objective-value.blue {
+        color: #1f8ecd;
+    }
+
+    .objective-value.red {
+        color: #ee5a52;
+    }
+</style>
 
 {% endblock %}
