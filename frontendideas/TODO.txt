@@ -16,8 +16,6 @@ data analysis page
 	Be able to filter based on Split, Division, Category:Player/Team,
 	Then be able to filter based on certain stats
 	
-	
-
 input page
 
 
