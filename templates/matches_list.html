@@ -29,7 +29,11 @@
             {{ match['teams'][1]['team_name'] }}
           </button>
 
-          on {{ match.get('date', 'Date not available') }}
+          <!-- Fetch the correct date and format it -->
+          {% set match_timestamp = match['data']['info']['gameCreation'] %}
+          {% set match_date = match_timestamp // 1000 %}
+          {% set formatted_date = match_date | datetimeformat('%Y-%m-%d %H:%M:%S') %}
+          on {{ formatted_date }}
           <span class="badge">{{ match['split'] }} - {{ match['division'] }}</span>
         {% else %}
           <span>Teams data is missing</span>

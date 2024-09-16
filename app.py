@@ -62,11 +62,9 @@ def number_format(value):
         return value
 
 # Custom filter to format dates
-@app.template_filter('date_format')
-def date_format(value, format='%Y-%m-%d %H:%M:%S'):
-    if isinstance(value, datetime):
-        return value.strftime(format)
-    return value
+@app.template_filter('datetimeformat')
+def datetimeformat(value, format='%Y-%m-%d %H:%M:%S'):
+    return datetime.utcfromtimestamp(value).strftime(format)
 
 @app.route('/')
 def index():
@@ -220,7 +218,27 @@ def player_detail(object_id):
     # Retrieve the current teams of the player
     player['current_teams'] = [db['teams'].find_one({"_id": ObjectId(team_id)}) for team_id in player.get('current_teams', []) if ObjectId.is_valid(team_id)]
 
-    return render_template('player_detail.html', player_detail=player)
+    # Fetch the last 10 matches and their details
+    match_ids = player.get('match_history', [])[:10]  # Get the first 10 matches
+    matches = []
+    for match_id in match_ids:
+        match = db['matches'].find_one({"_id": ObjectId(match_id)})
+        if match:
+            # Resolve team details and identify the winner
+            resolved_teams = []
+            for team_id in match.get('teams', []):
+                resolved_team = db['teams'].find_one({"_id": ObjectId(team_id)}) if ObjectId.is_valid(team_id) else {"team_name": "Unknown Team"}
+                if resolved_team:
+                    resolved_team['winner'] = resolved_team.get('winner', False)
+                    resolved_teams.append(resolved_team)
+            match['teams'] = resolved_teams
+
+            # Add date and match details
+            game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
+            match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S') if game_start_timestamp else "Date not available"
+            matches.append(match)
+
+    return render_template('player_detail.html', player_detail=player, matches=matches, latestVersion=latest_version, championMap=champion_map)
 
 @app.route('/team_detail/<object_id>')
 def team_detail(object_id):

@@ -35,7 +35,7 @@
                     </td>
                     <td class="name">
                         <div class="summoner-tooltip" style="position: relative;">
-                            <a href="#">{{ player.summonerName }}</a>
+                            <a href="{{ url_for('player_detail', object_id=player._id) }}">{{ player.summonerName }}</a>
                         </div>
                         <div class="tier">
                             <div style="position: relative;">{{ player.individualPosition }}</div>
@@ -172,7 +172,7 @@
                     </td>
                     <td class="name">
                         <div class="summoner-tooltip" style="position: relative;">
-                            <a href="#">{{ player.summonerName }}</a>
+                            <a href="{{ url_for('player_detail', object_id=player._id) }}">{{ player.summonerName }}</a>
                         </div>
                         <div class="tier">
                             <div style="position: relative;">{{ player.individualPosition }}</div>
@@ -199,7 +199,6 @@
             </tbody>
         </table>
     </div>
-
     <style>
         .postgame-container {
             display: flex;

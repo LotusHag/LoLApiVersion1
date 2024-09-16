@@ -9,14 +9,14 @@ body {
 }
 
 .navbar {
-    background-color: #333;
+    background-color: #01133D;
     overflow: hidden;
     text-align: center;
     padding: 10px 0;
 }
 
 .navbar button {
-    background-color: #333;
+    background-color: #01133D;
     color: white;
     border: none;
     padding: 14px 20px;
