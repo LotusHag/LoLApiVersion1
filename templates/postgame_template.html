@@ -85,7 +85,7 @@
                                     {% endif %}
                                 {% endfor %}
                             </div>
-                            <div class="trinket-slot" style="margin-left: -1px;">
+                            <div class="trinket-slot" style="margin-left: 2px;">
                                 {% set trinketId = player['item6'] %}
                                 {% if trinketId != 0 %}
                                     <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/item/{{ match.itemMap[trinketId] }}" width="22" alt="Trinket">
@@ -130,7 +130,7 @@
                                     {% endif %}
                                 {% endfor %}
                             </div>
-                            <div class="trinket-slot" style="margin-right: -4px;">
+                            <div class="trinket-slot" style="margin-right: -2px;">
                                 {% set trinketId = player['item6'] %}
                                 {% if trinketId != 0 %}
                                     <img src="https://ddragon.leagueoflegends.com/cdn/{{ match.latestVersion }}/img/item/{{ match.itemMap[trinketId] }}" width="22" alt="Trinket">
@@ -199,6 +199,7 @@
             </tbody>
         </table>
     </div>
+
     <style>
         .postgame-container {
             display: flex;
@@ -207,43 +208,54 @@
             padding: 0 20px;
             flex-wrap: nowrap;
         }
+
         .team-box {
             flex: 0 1 48%;
             max-width: 850px;
             min-width: 500px;
             padding: 10px;
-            border: 2px solid #ccc;
+            border: 2px solid var(--bg-medium-blue);
             border-radius: 8px;
             box-sizing: border-box;
             overflow: hidden;
         }
+
         .blue-team {
-            background-color: #e0f7ff;
+            background-color: #28344E; /* Updated blue side background */
         }
+
         .red-team {
-            background-color: #ffe0e0;
+            background-color: #59343B; /* Updated red side background */
         }
+
         .team-table {
             width: 100%;
             border-collapse: collapse;
         }
-        .team-table th, .team-table td {
+
+        .team-table th,
+        .team-table td {
             padding: 5px;
             font-size: 12px;
+            color: var(--text-light);
         }
+
         .team-table thead th {
-            background-color: #f2f2f2;
+            background-color: var(--bg-darkest-blue);
             text-align: center;
         }
+
         .player-row {
             text-align: center;
-            border-bottom: 1px solid #ccc;
+            border-bottom: 1px solid var(--bg-medium-blue);
         }
+
         .champion img {
             width: 32px;
             height: 32px;
             border-radius: 50%;
         }
+
         .level {
             position: absolute;
             bottom: 0;
@@ -254,63 +266,82 @@
             padding: 1px 3px;
             border-radius: 3px;
         }
-        .spells img, .runes img {
+
+        .spells img,
+        .runes img {
             width: 16px;
             height: 16px;
             margin: 0;
             border-radius: 2px;
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
         }
+
         .items img {
+            width: 22px;
+            height: 22px;
             border-radius: 4px;
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
         }
+
         .item-container {
             display: flex;
-            gap: 5px;
+            gap: 1px; /* Ensuring 1px spacing between items */
             align-items: center;
         }
+
         .item-container-reverse {
             display: flex;
-            gap: 5px;
+            gap: 1px; /* Ensuring 1px spacing between items */
             align-items: center;
-            flex-direction: row-reverse; /* Ensures trinket is on the left for red team */
+            flex-direction: row-reverse; /* Trinket on the left side for red team */
         }
+
         .item-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             grid-template-rows: repeat(2, 1fr);
-            gap: 1px;
+            gap: 1px; /* Adjusted spacing between items */
             justify-content: center;
         }
+
         .trinket-slot {
             display: flex;
             align-items: center;
             justify-content: center;
             width: 22px;
             height: 22px;
-            border: 1px solid #ccc;
-            background-color: #f2f2f2;
+            border: none;
+            background-color: transparent;
             border-radius: 4px;
         }
+
         .item-slot {
             width: 22px;
             height: 22px;
             position: relative;
+            background-color: transparent;
+            border: none;
+            box-shadow: none;
         }
-        .item-slot img {
-            width: 100%;
-            height: 100%;
-        }
+
         .items .no-item {
             background-color: transparent;
         }
+
         .result.victory {
-            color: green;
+            color: var(--green);
             font-weight: bold;
         }
+
         .result.defeat {
-            color: red;
+            color: var(--red);
             font-weight: bold;
         }
+
         @media (max-width: 1200px) {
             .team-box {
                 flex: 1 1 100%;

@@ -1,0 +1,31 @@
+Match Detail page is done for now
+match detail page
+	needs to have the player hyperlinks be buttons that correctly send you to the correct page
+	needs to have the team hyperlinks also be buttons
+
+team list page
+	needs to have the buttons redone (background color for hover)
+	needs to have the summoner names turned into buttons and the last 10 matches formatted better
+
+team detail page
+
+player detail page
+	fix the
+
+data analysis page
+	Be able to filter based on Split, Division, Category:Player/Team,
+	Then be able to filter based on certain stats
+	
+	
+
+input page
+
+
+
+Backend: 
+Create series
+	find a way to create series first from an excel file and not yet assign a team to either side and then using the way we currently make teams players and matches fill the series.
+
+Check if a match is already in there
+	if the gameid, matches, the teams match and the split/division matches then dont store the data again.
+

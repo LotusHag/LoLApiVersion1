@@ -71,7 +71,7 @@
 
 <!-- Objectives Comparison Bar -->
 <div class="objectives-bar">
-    <div class="objectives-container">
+    <div class="objectives-container" style="margin-top: -30px;">
         <!-- Existing Objective Bars -->
 
         <!-- First Tower -->
@@ -170,7 +170,6 @@
 
 <!-- Player-Specific Stats Table -->
 <div class="player-stats-table-container">
-    <h3>Player-Specific Stats</h3>
     <div class="player-stats-table-wrapper">
         <table class="player-stats-table">
             <thead>
@@ -361,7 +360,6 @@
 
 <style>
     .bans-container {
-        margin-top: 20px;
         text-align: center;
     }
 
@@ -388,79 +386,62 @@
         width: 32px;
         height: 32px;
         border-radius: 5px;
-        border: 1px solid #ccc;
+        border: 1px solid var(--light-gray);
     }
 
     .ban-separator {
         width: 10px;
     }
 
-    .objectives-bar {
-        margin-top: 20px;
-        padding: 15px;
-        background-color: #f4f4f4;
-        border-radius: 8px;
-        text-align: center;
-        margin-top: -20px;
-    }
-
-    .objectives-container {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
-    }
-
-    .objective {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .objective-title {
-        font-weight: bold;
-        margin-bottom: 5px;
-        font-size: 16px;
-    }
-
     .objective-bar-container {
         display: flex;
         align-items: center;
-        gap: 10px;
+        margin: 5px 0;
+    }
+
+    .objective-title {
+        margin-right: 10px;
+        color: var(--text-light);
+        min-width: 100px;
+        text-align: center; /* Changed from left to center */
     }
 
     .objective-bar {
         flex: 1;
         height: 20px;
         display: flex;
-        background-color: #ddd;
+        background-color: var(--light-gray);
         border-radius: 4px;
         overflow: hidden;
-        min-width: 700px; /* Set a minimum width for the bar to ensure it remains consistent */
+        margin: 0 10px;
+        min-width: 600px;
     }
 
     .blue-bar {
-        background-color: #1f8ecd;
+        background-color: var(--blue);
         height: 100%;
     }
 
     .red-bar {
-        background-color: #ee5a52;
+        background-color: var(--red);
         height: 100%;
     }
 
     .objective-value {
         font-weight: bold;
-        font-size: 14px;
-        min-width: 50px;
-        text-align: center;
+        min-width: 40px;
     }
 
     .objective-value.blue {
-        color: #1f8ecd;
+        color: var(--blue);
+        text-align: center; /* Changed from left to center */
+        margin-right: 10px;
     }
 
     .objective-value.red {
-        color: #ee5a52;
+        color: var(--red);
+        text-align: center; /* Changed from right to center */
+        margin-left: 10px;
     }
 
     .player-stats-table-container {
@@ -468,27 +449,67 @@
         overflow-x: auto;
     }
 
-    .player-stats-table-wrapper {
-        width: 100%;
-        overflow-x: scroll;
-        display: block;
-    }
-
     .player-stats-table {
         width: 100%;
         border-collapse: collapse;
+        background-color: var(--bg-medium-blue);
+        color: var(--text-light);
     }
 
-    .player-stats-table th, .player-stats-table td {
+    .player-stats-table th,
+    .player-stats-table td {
         padding: 8px;
+        border: 1px solid var(--bg-darkest-blue);
         text-align: center;
-        border: 1px solid #ccc;
-        white-space: nowrap;
     }
 
     .player-stats-table th {
-        background-color: #f2f2f2;
+        background-color: var(--bg-darker-blue);
+        color: var(--accent-light-gold);
+    }
+
+    .player-stats-table tr:nth-child(even) {
+        background-color: var(--bg-dark-blue);
+    }
+
+    .player-stats-table tr:hover {
+        background-color: var(--bg-medium-blue);
+    }
+
+    .graph-container {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: var(--bg-medium-blue);
+        border-radius: 8px;
+        position: relative;
+    }
+
+    .graph {
+        width: 100%;
+        height: 300px;
+        border: 1px solid var(--light-gray);
+    }
+
+    .graph-line {
+        stroke: white;
+        stroke-width: 1.5px;
+    }
+
+    .graph-grid line {
+        stroke: white;
+        stroke-opacity: 0.3;
+    }
+
+    .graph-axis path,
+    .graph-axis line {
+        stroke: white;
+        stroke-width: 1;
+    }
+
+    .graph-axis text {
+        fill: white;
     }
 </style>
+
 
 {% endblock %}

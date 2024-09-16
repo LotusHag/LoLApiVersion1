@@ -159,6 +159,7 @@
   }
 </script>
 
+
 <style>
   .data-container {
     margin-bottom: 15px;
@@ -166,19 +167,20 @@
 
   .data-bar {
     padding: 10px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--bg-medium-blue);
     margin: 5px 0;
     cursor: pointer;
-    background-color: #f9f9f9;
+    background-color: var(--bg-dark-blue);
     border-radius: 5px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     position: relative;
+    color: var(--text-light-gray);
   }
 
   .data-bar:hover {
-    background-color: #e0e0e0;
+    background-color: var(--bg-darker-blue);
   }
 
   .data-summary {
@@ -187,16 +189,18 @@
 
   .details-button {
     padding: 5px 10px;
-    background-color: #007BFF;
-    color: white;
+    background-color: var(--accent-gold);
+    color: var(--bg-darkest-blue);
     border: none;
     border-radius: 5px;
     cursor: pointer;
     font-size: 12px;
+    transition: background-color 0.3s, color 0.3s;
   }
 
   .details-button:hover {
-    background-color: #0056b3;
+    background-color: var(--accent-light-gold);
+    color: var(--bg-dark-blue);
   }
 
   .team-button {
@@ -206,23 +210,34 @@
     cursor: pointer;
     font-size: 14px;
     margin: 0 5px;
+    color: var(--text-light-gray);
+    background-color: var(--bg-medium-blue);
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .team-button:hover {
+    background-color: var(--bg-darker-blue);
+    color: var(--white);
   }
 
   .winner-team {
-    background-color: #d4edda; /* Light green for winning team */
-    color: #155724;
+    background-color: var(--green);
+    color: var(--white);
   }
 
   .loser-team {
-    background-color: #f8d7da; /* Light red for losing team */
-    color: #721c24;
+    background-color: var(--red);
+    color: var(--white);
   }
 
   .data-details {
     padding: 10px;
-    border-top: 1px solid #ddd;
+    border-top: 1px solid var(--bg-medium-blue);
     display: none;
     margin-top: 10px;
+    background-color: var(--bg-darker-blue);
+    border-radius: 8px;
+    color: var(--text-light-gray);
   }
 
   .teams-container {
@@ -233,18 +248,19 @@
 
   .team {
     width: 48%;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: var(--bg-medium-blue);
   }
 
   .blue-team {
-    background-color: #e0f7ff;
-    padding: 10px;
-    border-radius: 5px;
+    background-color: #0f213f; /* A subtle blue background fitting the dark theme */
+    border: 1px solid var(--bg-dark-blue);
   }
 
   .red-team {
-    background-color: #ffe0e0;
-    padding: 10px;
-    border-radius: 5px;
+    background-color: #3a1a1a; /* A subtle red background fitting the dark theme */
+    border: 1px solid var(--bg-dark-blue);
   }
 
   .bans-container {
@@ -256,6 +272,8 @@
   .ban-icon {
     width: 40px;
     height: 40px;
+    border: 1px solid var(--bg-dark-blue);
+    border-radius: 5px;
   }
 
   .player-list {
@@ -266,18 +284,21 @@
 
   .player {
     display: flex;
-    background-color: #fff;
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     align-items: center;
+    background-color: var(--bg-dark-blue);
+    padding: 10px;
+    border: 1px solid var(--bg-medium-blue);
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    color: var(--text-light-gray);
   }
 
   .champion-icon {
     width: 60px;
     height: 60px;
     margin-right: 10px;
+    border-radius: 5px;
+    border: 1px solid var(--bg-dark-blue);
   }
 
   .player-info {
@@ -288,16 +309,18 @@
 
   .items-grid {
     display: grid;
-    grid-template-columns: repeat(6, 24px); /* 6 items per row */
-    grid-gap: 2px; /* Smaller gap between items */
+    grid-template-columns: repeat(6, 24px);
+    grid-gap: 2px;
     margin-top: 5px;
   }
 
   .item-icon {
     width: 24px;
     height: 24px;
-    border: 1px solid #ccc;
+    border: 1px solid var(--bg-dark-blue);
     border-radius: 3px;
   }
 </style>
+
+
 {% endblock %}

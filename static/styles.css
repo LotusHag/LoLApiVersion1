@@ -1,23 +1,51 @@
-/* static/styles.css */
+/* Define color variables at the root level */
+:root {
+    /* Background Colors */
+    --bg-dark-blue: #01133D;
+    --bg-medium-blue: #1f2a47;
+    --bg-darker-blue: #182034;
+    --bg-darkest-blue: #111827;
 
-/* General styling */
+    /* Accent Colors */
+    --accent-gold: #CFAA01;
+    --accent-light-gold: #F8EDB6;
+
+    /* Text and Other Colors */
+    --text-light-gray: #D3D3D3;
+    --white: #ffffff;
+    --light-blue: #e0f7ff;
+    --light-red: #ffe0e0;
+    --green: #4CAF50;
+    --red: #F44336;
+    --blue: #007bff;
+    --light-gray: #f4f4f4;
+    --dark-gray: #575757;
+
+    /* Team Colors */
+    --blue-team: #28344E;
+    --red-team: #59343B;
+}
+
+/* General styling for dark mode */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
+    background-color: var(--bg-darkest-blue); /* Dark background */
+    color: var(--text-light-gray); /* Light gray text */
 }
 
+/* Navbar styling */
 .navbar {
-    background-color: #01133D;
+    background-color: var(--bg-dark-blue);
     overflow: hidden;
     text-align: center;
     padding: 10px 0;
 }
 
 .navbar button {
-    background-color: #01133D;
-    color: white;
+    background-color: var(--bg-dark-blue);
+    color: var(--accent-light-gold);
     border: none;
     padding: 14px 20px;
     text-align: center;
@@ -25,24 +53,32 @@ body {
     cursor: pointer;
     display: inline-block;
     margin: 0 5px;
+    transition: background-color 0.3s, color 0.3s;
 }
 
 .navbar button:hover {
-    background-color: #575757;
+    background-color: var(--bg-medium-blue);
+    color: var(--white);
     border-radius: 5px;
-
 }
 
+/* Container for main content */
 .container {
     margin: 20px auto;
     max-width: 800px;
+    background-color: var(--bg-darker-blue);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* Header styling */
 h1, h2 {
     text-align: center;
+    color: var(--accent-gold);
 }
 
-/* New styles for team display */
+/* Styling for team displays */
 .team-container {
     display: flex;
     justify-content: space-between;
@@ -53,16 +89,18 @@ h1, h2 {
     width: 48%;
     padding: 15px;
     border-radius: 5px;
+    background-color: var(--bg-dark-blue);
 }
 
 .blue-team {
-    background-color: #e0f7ff;
+    background-color: var(--bg-medium-blue);
 }
 
 .red-team {
-    background-color: #ffe0e0;
+    background-color: var(--bg-darker-blue);
 }
 
+/* Player card styles */
 .player-list {
     display: flex;
     flex-direction: column;
@@ -72,14 +110,15 @@ h1, h2 {
 .player {
     display: flex;
     align-items: center;
-    background-color: white;
+    background-color: var(--bg-dark-blue);
     padding: 10px;
     border-radius: 4px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .player-name, .champion, .kda, .damage, .gold-cs, .items {
     margin-right: 15px;
+    color: var(--text-light-gray);
 }
 
 .items img {
@@ -100,28 +139,99 @@ h1, h2 {
     margin: 10px;
     font-size: 18px;
     font-weight: bold;
-    color: white;
-    background-color: #007BFF;
+    color: var(--bg-darkest-blue);
+    background-color: var(--accent-gold);
     border: none;
     border-radius: 5px;
     text-align: center;
     text-decoration: none;
     transition: background-color 0.3s, box-shadow 0.3s;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
 }
 
 .data-button:hover {
-    background-color: #0056b3;
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    background-color: var(--accent-light-gold);
+    color: var(--bg-dark-blue);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.5);
 }
 
-/* New styles for winner and loser */
+/* Styles for indicating winners and losers */
 .winner {
-    color: green;
+    color: var(--green);
     font-weight: bold;
 }
 
 .loser {
-    color: red;
+    color: var(--red);
     font-weight: bold;
+}
+
+/* Styling tables */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--bg-darkest-blue);
+}
+
+.table th, .table td {
+    border: 1px solid var(--bg-medium-blue);
+    padding: 10px;
+    text-align: center;
+    color: var(--text-light-gray);
+}
+
+.table th {
+    background-color: var(--bg-dark-blue);
+    color: var(--accent-light-gold);
+}
+
+/* Form elements */
+input, select, textarea {
+    background-color: var(--bg-dark-blue);
+    color: var(--text-light-gray);
+    border: 1px solid var(--bg-medium-blue);
+    border-radius: 4px;
+    padding: 8px;
+    width: calc(100% - 18px);
+}
+
+/* Specific component styles */
+.details-button {
+    padding: 10px 15px;
+    background-color: var(--bg-medium-blue);
+    color: var(--accent-light-gold);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.details-button:hover {
+    background-color: var(--bg-dark-blue);
+    color: var(--white);
+}
+
+/* Miscellaneous */
+.objective-bar {
+    background-color: var(--bg-darkest-blue);
+}
+
+.objective-bar .blue-bar {
+    background-color: var(--blue);
+}
+
+.objective-bar .red-bar {
+    background-color: var(--red);
+}
+
+.item-icon {
+    border: 1px solid var(--bg-dark-blue);
+    border-radius: 3px;
+}
+
+/* Adjust spacing and overall padding */
+.bans-container, .objectives-bar, .player-stats-table-container {
+    padding: 15px;
+    background-color: var(--bg-darker-blue);
+    border-radius: 8px;
 }
