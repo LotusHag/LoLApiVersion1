@@ -8,9 +8,15 @@ team list page
 	needs to have the summoner names turned into buttons and the last 10 matches formatted better
 
 team detail page
+	have the average stats take into acount that there are 5 players on the team
+	have the team wins be done by going through the match history and taking the wins from each match and adding them together
+	have the team losses be done by taking the matches and subtracting the wins from the total matches
+	have the average winrate per champion be done by taking the number of wins and dividing it by the number of matches
 
 player detail page
-	fix the
+	fix the winrate stat to be the number of wins divided by the number of matches but you have to use the matchhistory to get the number of wins and the number of matches
+	fix the match history to be in a table format and to actually correctly display the teams, win or loss, the champion played, and the kda of the player and the date
+
 
 data analysis page
 	Be able to filter based on Split, Division, Category:Player/Team,

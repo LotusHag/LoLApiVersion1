@@ -248,14 +248,20 @@ def team_detail(object_id):
     if not team:
         return "Team not found", 404
 
+    # Retrieve current roster
     current_roster = []
     for player_id in team.get('current_roster', []):
         player = db['players'].find_one({'_id': ObjectId(player_id)}) if ObjectId.is_valid(player_id) else db['players'].find_one({'summoner_ids': player_id})
         current_roster.append(player if player else {"summoner_names": ["Unknown Player"]})
     team['current_roster'] = current_roster
 
+    # Fetch the last 10 matches and their details
     match_history_ids = team.get('match_history', [])[-10:]
-    matches = list(db['matches'].find({'_id': {'$in': [ObjectId(match_id) for match_id in match_history_ids if ObjectId.is_valid(match_id)]}}))
+    matches = list(db['matches'].find({
+        '_id': {
+            '$in': [ObjectId(match_id) for match_id in match_history_ids if ObjectId.is_valid(match_id)]
+        }
+    }))
     for match in matches:
         game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
         match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S') if game_start_timestamp else "Date not available"
@@ -270,7 +276,9 @@ def team_detail(object_id):
 
     team['match_history'] = matches
 
-    return render_template('team_detail.html', team_detail=team)
+    # Ensure `latestVersion` and `championMap` are passed correctly
+    return render_template('team_detail.html', team_detail=team, latestVersion=latest_version, championMap=champion_map)
+
 
 if __name__ == '__main__':
     app.run(debug=True)
