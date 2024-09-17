@@ -1,0 +1,302 @@
+<!-- templates/player_detail.html -->
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="player-detail-container">
+    <!-- Player Name and Total Matches Played -->
+    <h2>{{ player_detail['summoner_names'] | join(', ') }}</h2>
+    <p>Total Matches Played: {{ player_detail['match_history']|length }}</p>
+
+    <!-- Main Layout Sections -->
+    <div class="main-layout">
+        <!-- Left Side: Stats and Match History -->
+        <div class="left-side">
+            <!-- Stats Section -->
+            <section class="stats-section">
+                <h3>Average Stats</h3>
+                <div class="average-stats scrollable">
+                    <p><strong>Kills:</strong> {{ (player_detail['stats_totals'].get('kills', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Deaths:</strong> {{ (player_detail['stats_totals'].get('deaths', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Assists:</strong> {{ (player_detail['stats_totals'].get('assists', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>KDA:</strong> {{ ((player_detail['stats_totals'].get('kills', 0) + player_detail['stats_totals'].get('assists', 0)) / player_detail['stats_totals'].get('deaths', 0)) | round(1) }}</p>
+                    <p><strong>Gold Earned:</strong> {{ (player_detail['stats_totals'].get('goldEarned', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Gold Per Minute (GPM):</strong> {{ (player_detail['stats_totals'].get('goldPerMinute', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Total Damage Dealt:</strong> {{ (player_detail['stats_totals'].get('totalDamageDealt', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Total Damage Dealt to Champions:</strong> {{ (player_detail['stats_totals'].get('totalDamageDealtToChampions', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Total Damage Taken:</strong> {{ (player_detail['stats_totals'].get('totalDamageTaken', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Damage Dealt Per Minute:</strong> {{ (player_detail['stats_totals'].get('damagePerMinute', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Damage Dealt Per Gold Spent:</strong> {{ (player_detail['stats_totals'].get('damageToChampionsPerGoldSpent', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Creep Score (CS):</strong> {{ (player_detail['stats_totals'].get('totalMinionsKilled', 0) + player_detail['stats_totals'].get('neutralMinionsKilled', 0)) / player_detail['match_history']|length | round(1) }}</p>
+                    <p><strong>CS Per Minute:</strong> {{ ((player_detail['stats_totals'].get('totalMinionsKilled', 0) + player_detail['stats_totals'].get('neutralMinionsKilled', 0)) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Total Gold Spent:</strong> {{ (player_detail['stats_totals'].get('goldSpent', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Largest Killing Spree:</strong> {{ (player_detail['stats_totals'].get('largestKillingSpree', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Killing Sprees:</strong> {{ (player_detail['stats_totals'].get('killingSprees', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Double Kills:</strong> {{ (player_detail['stats_totals'].get('doubleKills', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Triple Kills:</strong> {{ (player_detail['stats_totals'].get('tripleKills', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Quadra Kills:</strong> {{ (player_detail['stats_totals'].get('quadraKills', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Penta Kills:</strong> {{ (player_detail['stats_totals'].get('pentaKills', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                    <p><strong>Unreal Kills:</strong> {{ (player_detail['stats_totals'].get('unrealKills', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                </div>
+            </section>
+
+            <!-- Match History Section -->
+            <section class="match-history-section">
+                <h3>Match History</h3>
+                <div class="match-history scrollable">
+                    {% if matches %}
+                        {% for match in matches %}
+                        <div class="match-bar">
+                            <a href="{{ url_for('match_detail', object_id=match['_id']) }}" class="match-button">
+                                <span>{{ match['date'] }}</span>
+                                <div class="teams">
+                                    {% for team in match['teams'] %}
+                                    <a href="{{ url_for('team_detail', object_id=team['_id']) }}" class="team-button {{ 'green-button' if team['winner'] else 'red-button' }}">
+                                        {{ team['team_name'] }}
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p>No matches available.</p>
+                    {% endif %}
+                </div>
+
+                <!-- Pagination Controls -->
+                {% if player_detail['match_history']|length > 10 %}
+                <button id="load-more-button" class="load-more" onclick="loadMoreMatches()">Load More Matches</button>
+                {% endif %}
+            </section>
+        </div>
+
+        <!-- Right Side: Champions and Lanes Played -->
+        <div class="right-side">
+            <!-- Champions and Lanes Played Section -->
+            <section class="champions-lanes-section">
+                <div class="champions-lanes-container">
+                    <!-- Champions Played -->
+                    <div class="champions-played">
+                        <h4>Champions Played</h4>
+                        <ul class="champions-list">
+                            {% for champion_name, count in player_detail['champions_played'].items() | sort(attribute=1, reverse=True) %}
+                            <li>
+                                <div class="champion-item">
+                                    <img class="champion-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ champion_name }}.png" alt="{{ champion_name }}">
+                                    <div class="icon-text-container">
+                                        <strong>{{ count }}</strong>
+                                        <span style="font-size: smaller;">({{ (count / player_detail['match_history']|length) * 100 | round(1) }}%)</span>
+                                    </div>
+                                </div>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    
+                    <!-- Lanes Played -->
+                    <div class="lanes-played">
+                        <h4>Lanes Played</h4>
+                        <ul class="lanes-list">
+                            <li class="lane-item">
+                                <img class="lane-icon" src="/static/imgs/LaneIcons/TOP.png" alt="Top Lane">
+                                <div class="lane-text">
+                                    <strong>{{ player_detail['positions_played'].get('TOP', 0) }}</strong>
+                                </div>
+                            </li>
+                            <li class="lane-item">
+                                <img class="lane-icon" src="/static/imgs/LaneIcons/JUNGLE.png" alt="Jungle Lane">
+                                <div class="lane-text">
+                                    <strong>{{ player_detail['positions_played'].get('JUNGLE', 0) }}</strong>
+                                </div>
+                            </li>
+                            <li class="lane-item">
+                                <img class="lane-icon" src="/static/imgs/LaneIcons/MIDDLE.png" alt="Mid Lane">
+                                <div class="lane-text">
+                                    <strong>{{ player_detail['positions_played'].get('MIDDLE', 0) }}</strong>
+                                </div>
+                            </li>
+                            <li class="lane-item">
+                                <img class="lane-icon" src="/static/imgs/LaneIcons/BOT.png" alt="Bot Lane">
+                                <div class="lane-text">
+                                    <strong>{{ player_detail['positions_played'].get('BOTTOM', 0) }}</strong>
+                                </div>
+                            </li>
+                            <li class="lane-item">
+                                <img class="lane-icon" src="/static/imgs/LaneIcons/SUPPORT.png" alt="Support Lane">
+                                <div class="lane-text">
+                                    <strong>{{ player_detail['positions_played'].get('UTILITY', 0) }}</strong>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Team History Section -->
+            <section class="team-history-section">
+                <h3>Team History</h3>
+                <ul>
+                    {% for team in player_detail['current_teams'] %}
+                    <li>
+                        <a href="{{ url_for('team_detail', object_id=team['_id']) }}">
+                            {{ team['team_name'] }} (Split: {{ team['split'] }} | Div: {{ team['division'] }})
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </section>
+        </div>
+    </div>
+</div>
+
+<style>
+    .player-detail-container {
+        padding: 20px;
+    }
+
+    .main-layout {
+        display: flex;
+        gap: 20px;
+    }
+
+    .left-side {
+        flex: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .right-side {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .stats-section, .match-history-section, .champions-lanes-section, .team-history-section {
+        border: 1px solid var(--bg-medium-blue);
+        padding: 10px;
+        border-radius: 8px;
+        background-color: var(--bg-dark-blue);
+        width: 100%;
+    }
+
+    .scrollable {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .match-bar {
+        padding: 5px;
+        border-bottom: 1px solid var(--bg-light-blue);
+    }
+
+    .teams {
+        display: flex;
+        gap: 10px;
+    }
+
+    .team-button {
+        padding: 5px 10px;
+        border-radius: 5px;
+        text-decoration: none;
+        color: white;
+        font-weight: bold;
+    }
+
+    .green-button {
+        background-color: var(--bg-green);
+    }
+
+    .red-button {
+        background-color: var(--bg-red);
+    }
+
+    .load-more {
+        padding: 10px;
+        background-color: var(--bg-blue);
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+
+    .champions-lanes-container {
+        display: flex;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+        width: 100%;
+    }
+
+    .champions-played {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid var(--bg-medium-blue);
+        border-radius: 8px;
+        background-color: var(--bg-dark-blue);
+        width: 60%;
+    }
+
+    .lanes-played {
+        flex: 1;
+        padding: 10px;
+        border: 1px solid var(--bg-medium-blue);
+        border-radius: 8px;
+        background-color: var(--bg-dark-blue);
+        width: 40%;
+    }
+
+    .champions-list, .lanes-list {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .champion-icon, .lane-icon {
+        width: 32px;
+        height: 32px;
+        object-fit: cover;
+    }
+
+    .icon-text-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .champion-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .lane-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .lane-text {
+        display: flex;
+        align-items: center;
+    }
+
+    h4 {
+        margin-bottom: 5px;
+        text-align: center;
+    }
+</style>
+
+<script>
+function loadMoreMatches() {
+    // Load more matches logic goes here
+}
+</script>
+
+{% endblock %}

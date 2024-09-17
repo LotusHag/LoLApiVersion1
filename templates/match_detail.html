@@ -1,0 +1,515 @@
+<!-- templates/match_detail.html -->
+
+{% extends 'base.html' %}
+{% import 'postgame_template.html' as postgame %}
+
+{% block content %}
+<h2>Match Detail</h2>
+
+<!-- Fetch the correct date from the match data -->
+{% set match_timestamp = match_detail['data']['info']['gameCreation'] %}
+{% set match_date = match_timestamp // 1000 %}
+{% set formatted_date = match_date | datetimeformat('%Y-%m-%d %H:%M:%S') %}
+
+<!-- Match Summary -->
+<p><strong>Match:</strong> 
+    <a href="{{ url_for('team_detail', object_id=match_detail['teams'][0]['_id']) }}">
+        {{ match_detail['teams'][0]['team_name'] }}
+    </a> vs 
+    <a href="{{ url_for('team_detail', object_id=match_detail['teams'][1]['_id']) }}">
+        {{ match_detail['teams'][1]['team_name'] }}
+    </a>
+    | <strong>Split:</strong> {{ match_detail['split'] }} | <strong>Division:</strong> {{ match_detail['division'] }}
+</p>
+<p>
+    <strong>Date:</strong> {{ formatted_date }} | 
+    <strong>Duration:</strong> {{ (match_detail['data']['info']['gameDuration'] // 60) }}:{{ '%02d' % (match_detail['data']['info']['gameDuration'] % 60) }}
+</p>
+<p><strong>Winner:</strong> 
+    <a href="{{ url_for('team_detail', object_id=(match_detail['teams'][0]['_id'] if match_detail['teams'][0]['win'] else match_detail['teams'][1]['_id'])) }}">
+        {{ match_detail['teams'][0]['team_name'] if match_detail['teams'][0]['win'] else match_detail['teams'][1]['team_name'] }}
+    </a>
+</p>
+
+<!-- Render Post-Game Stats Table -->
+{{ postgame.postgame_stats(match_detail) }}
+
+<!-- Bans Display -->
+<div class="bans-container">
+    <div class="bans-section">
+        <!-- Blue Team Bans -->
+        <div class="team-bans blue-bans">
+            <div class="bans-icons">
+                <!-- First three bans -->
+                {% for ban in match_detail['data']['info']['teams'][0]['bans'][:3] %}
+                    <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ match_detail.latestVersion }}/img/champion/{{ match_detail.championMap[ban['championId']] }}.png" alt="Ban">
+                {% endfor %}
+                <span class="ban-separator"></span>
+                <!-- Last two bans -->
+                {% for ban in match_detail['data']['info']['teams'][0]['bans'][3:] %}
+                    <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ match_detail.latestVersion }}/img/champion/{{ match_detail.championMap[ban['championId']] }}.png" alt="Ban">
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Red Team Bans -->
+        <div class="team-bans red-bans">
+            <div class="bans-icons">
+                <!-- First three bans -->
+                {% for ban in match_detail['data']['info']['teams'][1]['bans'][:3] %}
+                    <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ match_detail.latestVersion }}/img/champion/{{ match_detail.championMap[ban['championId']] }}.png" alt="Ban">
+                {% endfor %}
+                <span class="ban-separator"></span>
+                <!-- Last two bans -->
+                {% for ban in match_detail['data']['info']['teams'][1]['bans'][3:] %}
+                    <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ match_detail.latestVersion }}/img/champion/{{ match_detail.championMap[ban['championId']] }}.png" alt="Ban">
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Objectives Comparison Bar -->
+<div class="objectives-bar">
+    <div class="objectives-container" style="margin-top: -30px;">
+        <!-- Existing Objective Bars -->
+
+        <!-- First Tower -->
+        <div class="objective">
+            <div class="objective-title">Towers</div>
+            <div class="objective-bar-container">
+                <span class="objective-value blue">{{ match_detail['data']['info']['teams'][0]['objectives']['tower']['kills'] }}</span>
+                <div class="objective-bar">
+                    <div class="blue-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][0]['objectives']['tower']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['tower']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['tower']['kills']) }}%;"></div>
+                    <div class="red-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][1]['objectives']['tower']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['tower']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['tower']['kills']) }}%;"></div>
+                </div>
+                <span class="objective-value red">{{ match_detail['data']['info']['teams'][1]['objectives']['tower']['kills'] }}</span>
+            </div>
+        </div>
+
+        <!-- Baron Kills -->
+        <div class="objective">
+            <div class="objective-title">Baron Kills</div>
+            <div class="objective-bar-container">
+                <span class="objective-value blue">{{ match_detail['data']['info']['teams'][0]['objectives']['baron']['kills'] }}</span>
+                <div class="objective-bar">
+                    <div class="blue-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][0]['objectives']['baron']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['baron']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['baron']['kills']) }}%;"></div>
+                    <div class="red-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][1]['objectives']['baron']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['baron']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['baron']['kills']) }}%;"></div>
+                </div>
+                <span class="objective-value red">{{ match_detail['data']['info']['teams'][1]['objectives']['baron']['kills'] }}</span>
+            </div>
+        </div>
+
+        <!-- Dragons -->
+        <div class="objective">
+            <div class="objective-title">Dragons</div>
+            <div class="objective-bar-container">
+                <span class="objective-value blue">{{ match_detail['data']['info']['teams'][0]['objectives']['dragon']['kills'] }}</span>
+                <div class="objective-bar">
+                    <div class="blue-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][0]['objectives']['dragon']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['dragon']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['dragon']['kills']) }}%;"></div>
+                    <div class="red-bar" style="width: {{ 100 * match_detail['data']['info']['teams'][1]['objectives']['dragon']['kills'] / (match_detail['data']['info']['teams'][0]['objectives']['dragon']['kills'] + match_detail['data']['info']['teams'][1]['objectives']['dragon']['kills']) }}%;"></div>
+                </div>
+                <span class="objective-value red">{{ match_detail['data']['info']['teams'][1]['objectives']['dragon']['kills'] }}</span>
+            </div>
+        </div>
+
+        <!-- Total Kills -->
+        <div class="objective">
+            <div class="objective-title">Total Kills</div>
+            <div class="objective-bar-container">
+                <span class="objective-value blue">{{ match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='kills') }}</span>
+                <div class="objective-bar">
+                    <div class="blue-bar" style="width: {{ 100 * match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='kills') / (match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='kills') + match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='kills')) }}%;"></div>
+                    <div class="red-bar" style="width: {{ 100 * match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='kills') / (match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='kills') + match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='kills')) }}%;"></div>
+                </div>
+                <span class="objective-value red">{{ match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='kills') }}</span>
+            </div>
+        </div>
+
+        <!-- Gold Earned -->
+        <div class="objective">
+            <div class="objective-title">Gold Earned</div>
+            <div class="objective-bar-container">
+                <span class="objective-value blue">{{ (match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='goldEarned') / 1000) | round(1) }}k</span>
+                <div class="objective-bar">
+                    <div class="blue-bar" style="width: {{ 100 * match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='goldEarned') / (match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='goldEarned') + match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='goldEarned')) }}%;"></div>
+                    <div class="red-bar" style="width: {{ 100 * match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='goldEarned') / (match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='goldEarned') + match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='goldEarned')) }}%;"></div>
+                </div>
+                <span class="objective-value red">{{ (match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='goldEarned') / 1000) | round(1) }}k</span>
+            </div>
+        </div>
+
+        <!-- Wards Placed -->
+        <div class="objective">
+            <div class="objective-title">Wards Placed</div>
+            <div class="objective-bar-container">
+                <span class="objective-value blue">{{ match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='wardsPlaced') }}</span>
+                <div class="objective-bar">
+                    <div class="blue-bar" style="width: {{ 100 * match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='wardsPlaced') / (match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='wardsPlaced') + match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='wardsPlaced')) }}%;"></div>
+                    <div class="red-bar" style="width: {{ 100 * match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='wardsPlaced') / (match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='wardsPlaced') + match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='wardsPlaced')) }}%;"></div>
+                </div>
+                <span class="objective-value red">{{ match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='wardsPlaced') }}</span>
+            </div>
+        </div>
+
+        <!-- Wards Destroyed -->
+        <div class="objective">
+            <div class="objective-title">Wards Destroyed</div>
+            <div class="objective-bar-container">
+                <span class="objective-value blue">{{ match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='wardsKilled') }}</span>
+                <div class="objective-bar">
+                    <div class="blue-bar" style="width: {{ 100 * match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='wardsKilled') / (match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='wardsKilled') + match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='wardsKilled')) }}%;"></div>
+                    <div class="red-bar" style="width: {{ 100 * match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='wardsKilled') / (match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 100)|sum(attribute='wardsKilled') + match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='wardsKilled')) }}%;"></div>
+                </div>
+                <span class="objective-value red">{{ match_detail['data']['info']['participants']|selectattr('teamId', 'equalto', 200)|sum(attribute='wardsKilled') }}</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Player-Specific Stats Table -->
+<div class="player-stats-table-container">
+    <div class="player-stats-table-wrapper">
+        <table class="player-stats-table">
+            <thead>
+                <tr>
+                    <th>Player</th>
+                    <th>Kills</th>
+                    <th>Deaths</th>
+                    <th>Assists</th>
+                    <th>KDA</th>
+                    <th>First Blood Kill</th>
+                    <th>First Blood Assist</th>
+                    <th>Largest Killing Spree</th>
+                    <th>Killing Sprees</th>
+                    <th>Double Kills</th>
+                    <th>Triple Kills</th>
+                    <th>Quadra Kills</th>
+                    <th>Penta Kills</th>
+                    <th>Unreal Kills</th>
+                    <th>Solo Kills</th>
+                    <th>Outnumbered Kills</th>
+                    <th>Assist Streak</th>
+                    <th>Kill Participation Rate</th>
+                    <th>Kills Per Death</th>
+                    <th>Longest Killing Spree</th>
+                    <th>Damage Dealt to Champions</th>
+                    <th>Physical Damage Dealt to Champions</th>
+                    <th>Magic Damage Dealt to Champions</th>
+                    <th>True Damage Dealt to Champions</th>
+                    <th>Damage Taken</th>
+                    <th>Physical Damage Taken</th>
+                    <th>Magic Damage Taken</th>
+                    <th>True Damage Taken</th>
+                    <th>Damage Self Mitigated</th>
+                    <th>Time CC’d by Enemies</th>
+                    <th>Total Time CC Dealt</th>
+                    <th>Damage Blocked by Shields</th>
+                    <th>Damage to Shields</th>
+                    <th>Damage Taken Per Death</th>
+                    <th>Damage Dealt Per Minute</th>
+                    <th>Damage to Champions Per Gold</th>
+                    <th>Vision Score</th>
+                    <th>Wards Placed</th>
+                    <th>Wards Killed</th>
+                    <th>Vision Wards Bought</th>
+                    <th>Control Wards Placed</th>
+                    <th>Stealth Wards Placed</th>
+                    <th>Vision Wards Cleared</th>
+                    <th>Vision Cleared</th>
+                    <th>Number of Pings</th>
+                    <th>Skillshots Dodged</th>
+                    <th>Escape Rate from CC</th>
+                    <th>Damage Dealt to Objectives</th>
+                    <th>Damage Dealt to Turrets</th>
+                    <th>Damage Dealt to Buildings</th>
+                    <th>Epic Monsters Killed</th>
+                    <th>Scuttle Crabs Killed</th>
+                    <th>Damage Dealt to Epic Monsters</th>
+                    <th>Objective Steal Rate</th>
+                    <th>Epic Monster Steals</th>
+                    <th>Inhibitor Kills</th>
+                    <th>Turret Plates Taken</th>
+                    <th>First Tower Kill</th>
+                    <th>First Inhibitor Kill</th>
+                    <th>Baron Kills</th>
+                    <th>Dragon Kills</th>
+                    <th>Rift Herald Kills</th>
+                    <th>Neutral Minions Killed</th>
+                    <th>Jungle Minions Killed</th>
+                    <th>Allied Jungle Monsters Killed</th>
+                    <th>Neutral Minions Killed in Enemy Jungle</th>
+                    <th>Gold Earned</th>
+                    <th>Gold Spent</th>
+                    <th>Gold Per Minute</th>
+                    <th>Creep Score (CS)</th>
+                    <th>Damage to Jungle Monsters Per Minute</th>
+                    <th>Percent of Team’s Gold</th>
+                    <th>Percent of Team’s Damage</th>
+                    <th>Heal Amount</th>
+                    <th>Total Units Healed</th>
+                    <th>Time Spent Dead</th>
+                    <th>Total Heal on Teammates</th>
+                    <th>Time Spent Alive</th>
+                    <th>Average Level</th>
+                    <th>Level Difference</th>
+                    <th>Team Fights Involved</th>
+                    <th>Team Fight Win Rate</th>
+                    <th>Survival Rate in Team Fights</th>
+                    <th>Damage Per Minute in Team Fights</th>
+                    <th>Damage Taken Per Minute in Team Fights</th>
+                    <th>Deaths in Team Fights</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for player in match_detail['data']['info']['participants'] %}
+                <tr>
+                    <td>{{ player['summonerName'] }}</td>
+                    <td>{{ player['kills'] }}</td>
+                    <td>{{ player['deaths'] }}</td>
+                    <td>{{ player['assists'] }}</td>
+                    <td>{{ player['challenges']['kda'] }}</td>
+                    <td>{{ player['firstBloodKill'] }}</td>
+                    <td>{{ player['firstBloodAssist'] }}</td>
+                    <td>{{ player['largestKillingSpree'] }}</td>
+                    <td>{{ player['killingSprees'] }}</td>
+                    <td>{{ player['doubleKills'] }}</td>
+                    <td>{{ player['tripleKills'] }}</td>
+                    <td>{{ player['quadraKills'] }}</td>
+                    <td>{{ player['pentaKills'] }}</td>
+                    <td>{{ player['challenges']['unrealKills'] }}</td>
+                    <td>{{ player['challenges']['soloKills'] }}</td>
+                    <td>{{ player['challenges']['outnumberedKills'] }}</td>
+                    <td>{{ player['challenges']['assistsWithoutDying'] }}</td>
+                    <td>{{ player['challenges']['killParticipation'] }}</td>
+                    <td>{{ player['challenges']['killsPerDeath'] }}</td>
+                    <td>{{ player['challenges']['longestTimeSpentLiving'] }}</td>
+                    <td>{{ player['totalDamageDealtToChampions'] | number_format }}</td>
+                    <td>{{ player['physicalDamageDealtToChampions'] }}</td>
+                    <td>{{ player['magicDamageDealtToChampions'] }}</td>
+                    <td>{{ player['trueDamageDealtToChampions'] }}</td>
+                    <td>{{ player['totalDamageTaken'] | number_format }}</td>
+                    <td>{{ player['physicalDamageTaken'] }}</td>
+                    <td>{{ player['magicDamageTaken'] }}</td>
+                    <td>{{ player['trueDamageTaken'] }}</td>
+                    <td>{{ player['damageSelfMitigated'] }}</td>
+                    <td>{{ player['totalTimeSpentDead'] }}</td>
+                    <td>{{ player['totalTimeCCDealt'] }}</td>
+                    <td>{{ player['challenges']['damageBlockedByShields'] }}</td>
+                    <td>{{ player['challenges']['damageToShields'] }}</td>
+                    <td>{{ player['challenges']['damageTakenPerDeath'] }}</td>
+                    <td>{{ player['challenges']['damagePerMinute'] }}</td>
+                    <td>{{ player['challenges']['damageToChampionsPerGoldSpent'] }}</td>
+                    <td>{{ player['visionScore'] }}</td>
+                    <td>{{ player['wardsPlaced'] }}</td>
+                    <td>{{ player['wardsKilled'] }}</td>
+                    <td>{{ player['visionWardsBoughtInGame'] }}</td>
+                    <td>{{ player['challenges']['controlWardsPlaced'] }}</td>
+                    <td>{{ player['challenges']['stealthWardsPlaced'] }}</td>
+                    <td>{{ player['challenges']['visionWardsCleared'] }}</td>
+                    <td>{{ player['challenges']['visionCleared'] }}</td>
+                    <td>{{ player['challenges']['pings'] }}</td>
+                    <td>{{ player['challenges']['skillshotsDodged'] }}</td>
+                    <td>{{ player['challenges']['escapeRate'] }}</td>
+                    <td>{{ player['damageDealtToObjectives'] }}</td>
+                    <td>{{ player['damageDealtToTurrets'] }}</td>
+                    <td>{{ player['challenges']['damageDealtToBuildings'] }}</td>
+                    <td>{{ player['challenges']['epicMonstersKilled'] }}</td>
+                    <td>{{ player['challenges']['scuttleCrabsKilled'] }}</td>
+                    <td>{{ player['damageDealtToObjectives'] }}</td>
+                    <td>{{ player['challenges']['objectiveStealRate'] }}</td>
+                    <td>{{ player['challenges']['epicMonsterSteals'] }}</td>
+                    <td>{{ player['challenges']['inhibitorKills'] }}</td>
+                    <td>{{ player['challenges']['turretPlatesTaken'] }}</td>
+                    <td>{{ player['challenges']['firstTowerKill'] }}</td>
+                    <td>{{ player['challenges']['firstInhibitorKill'] }}</td>
+                    <td>{{ player['challenges']['baronKills'] }}</td>
+                    <td>{{ player['challenges']['dragonKills'] }}</td>
+                    <td>{{ player['challenges']['riftHeraldKills'] }}</td>
+                    <td>{{ player['challenges']['neutralMinionsKilled'] }}</td>
+                    <td>{{ player['challenges']['jungleMinionsKilled'] }}</td>
+                    <td>{{ player['challenges']['alliedJungleMonstersKilled'] }}</td>
+                    <td>{{ player['challenges']['neutralMinionsKilledInEnemyJungle'] }}</td>
+                    <td>{{ player['goldEarned'] }}</td>
+                    <td>{{ player['goldSpent'] }}</td>
+                    <td>{{ player['challenges']['goldPerMinute'] }}</td>
+                    <td>{{ player['totalMinionsKilled'] + player['neutralMinionsKilled'] }}</td>
+                    <td>{{ player['challenges']['damageToJungleMonstersPerMinute'] }}</td>
+                    <td>{{ player['challenges']['percentOfTeamsGold'] }}</td>
+                    <td>{{ player['challenges']['percentOfTeamsDamage'] }}</td>
+                    <td>{{ player['totalHeal'] }}</td>
+                    <td>{{ player['totalUnitsHealed'] }}</td>
+                    <td>{{ player['totalTimeSpentDead'] }}</td>
+                    <td>{{ player['totalHealsOnTeammates'] }}</td>
+                    <td>{{ player['challenges']['timeSpentAlive'] }}</td>
+                    <td>{{ player['challenges']['averageLevel'] }}</td>
+                    <td>{{ player['challenges']['levelDifference'] }}</td>
+                    <td>{{ player['challenges']['teamFightsInvolved'] }}</td>
+                    <td>{{ player['challenges']['teamFightWinRate'] }}</td>
+                    <td>{{ player['challenges']['survivalRateInTeamFights'] }}</td>
+                    <td>{{ player['challenges']['damagePerMinuteInTeamFights'] }}</td>
+                    <td>{{ player['challenges']['damageTakenPerMinuteInTeamFights'] }}</td>
+                    <td>{{ player['challenges']['deathsInTeamFights'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+    .bans-container {
+        text-align: center;
+    }
+
+    .bans-section {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+
+    .team-bans {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: -10px;
+    }
+
+    .bans-icons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .ban-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 5px;
+        border: 1px solid var(--light-gray);
+    }
+
+    .ban-separator {
+        width: 10px;
+    }
+
+    .objective-bar-container {
+        display: flex;
+        align-items: center;
+        margin: 5px 0;
+    }
+
+    .objective-title {
+        margin-right: 10px;
+        color: var(--text-light);
+        min-width: 100px;
+        text-align: center; /* Changed from left to center */
+    }
+
+    .objective-bar {
+        flex: 1;
+        height: 20px;
+        display: flex;
+        background-color: var(--light-gray);
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 0 10px;
+        min-width: 600px;
+    }
+
+    .blue-bar {
+        background-color: var(--blue);
+        height: 100%;
+    }
+
+    .red-bar {
+        background-color: var(--red);
+        height: 100%;
+    }
+
+    .objective-value {
+        font-weight: bold;
+        min-width: 40px;
+    }
+
+    .objective-value.blue {
+        color: var(--blue);
+        text-align: center; /* Changed from left to center */
+        margin-right: 10px;
+    }
+
+    .objective-value.red {
+        color: var(--red);
+        text-align: center; /* Changed from right to center */
+        margin-left: 10px;
+    }
+
+    .player-stats-table-container {
+        margin-top: 20px;
+        overflow-x: auto;
+    }
+
+    .player-stats-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: var(--bg-medium-blue);
+        color: var(--text-light);
+    }
+
+    .player-stats-table th,
+    .player-stats-table td {
+        padding: 8px;
+        border: 1px solid var(--bg-darkest-blue);
+        text-align: center;
+    }
+
+    .player-stats-table th {
+        background-color: var(--bg-darker-blue);
+        color: var(--accent-light-gold);
+    }
+
+    .player-stats-table tr:nth-child(even) {
+        background-color: var(--bg-dark-blue);
+    }
+
+    .player-stats-table tr:hover {
+        background-color: var(--bg-medium-blue);
+    }
+
+    .graph-container {
+        margin-top: 20px;
+        padding: 10px;
+        background-color: var(--bg-medium-blue);
+        border-radius: 8px;
+        position: relative;
+    }
+
+    .graph {
+        width: 100%;
+        height: 300px;
+        border: 1px solid var(--light-gray);
+    }
+
+    .graph-line {
+        stroke: white;
+        stroke-width: 1.5px;
+    }
+
+    .graph-grid line {
+        stroke: white;
+        stroke-opacity: 0.3;
+    }
+
+    .graph-axis path,
+    .graph-axis line {
+        stroke: white;
+        stroke-width: 1;
+    }
+
+    .graph-axis text {
+        fill: white;
+    }
+</style>
+
+
+{% endblock %}

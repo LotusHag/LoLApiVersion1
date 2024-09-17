@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Matches</h2>
+<div class="filter-options">
+  <input type="text" id="searchInput" placeholder="Search..." onkeyup="filterList()">
+</div>
+<div id="dataList">
+  {% for match in data %}
+  <div class="data-container">
+    <div class="data-bar" onclick="toggleDetails('{{ match['_id'] }}')">
+      <span class="data-summary">
+        {% if match.get('teams') and match['teams'][0] and match['teams'][1] %}
+          <!-- Determine win status based on team data from Riot API structure -->
+          {% set blue_team_win = match['data']['info']['teams'][0]['win'] %}
+          {% set red_team_win = match['data']['info']['teams'][1]['win'] %}
+
+          <!-- Blue Team Button -->
+          <button class="team-button {{ 'winner-team' if blue_team_win else 'loser-team' }}"
+                  onclick="event.stopPropagation(); window.location.href='{{ url_for('team_detail', object_id=match['teams'][0]['_id']|string) }}'">
+            {{ match['teams'][0]['team_name'] }}
+          </button>
+
+          vs
+
+          <!-- Red Team Button -->
+          <button class="team-button {{ 'winner-team' if red_team_win else 'loser-team' }}"
+                  onclick="event.stopPropagation(); window.location.href='{{ url_for('team_detail', object_id=match['teams'][1]['_id']|string) }}'">
+            {{ match['teams'][1]['team_name'] }}
+          </button>
+
+          <!-- Fetch the correct date and format it -->
+          {% set match_timestamp = match['data']['info']['gameCreation'] %}
+          {% set match_date = match_timestamp // 1000 %}
+          {% set formatted_date = match_date | datetimeformat('%Y-%m-%d %H:%M:%S') %}
+          on {{ formatted_date }}
+          <span class="badge">{{ match['split'] }} - {{ match['division'] }}</span>
+        {% else %}
+          <span>Teams data is missing</span>
+        {% endif %}
+      </span>
+      <button class="details-button" onclick="event.stopPropagation(); window.location.href='{{ url_for('match_detail', object_id=match['_id']|string) }}'">
+        More Details
+      </button>
+    </div>
+    <div id="details-{{ match['_id'] }}" class="data-details" style="display: none;">
+      <div class="teams-container">
+        <!-- Blue Team Section -->
+        <div class="team blue-team">
+          <div class="bans-container">
+            {% for ban in match['data']['info']['teams'][0]['bans'] %}
+              <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[ban['championId']] }}.png" alt="Ban">
+            {% endfor %}
+          </div>
+          <div class="player-list">
+            {% for player in match['data']['info']['participants'] if player['teamId'] == 100 %}
+            <div class="player">
+              <img class="champion-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[player['championId']] }}.png" alt="{{ player['championName'] }}">
+              <div class="player-info">
+                <button class="player-button" onclick="window.location.href='{{ url_for('player_detail', object_id=player['_id']|string) }}'">
+                  {{ player['summonerName'] }}
+                </button>
+                <div class="player-stats">
+                  <span>KDA: {{ player['kills'] }}/{{ player['deaths'] }}/{{ player['assists'] }}</span>
+                  <span class="gold" data-gold="{{ player['goldEarned'] }}">Gold: </span>
+                  <span class="damage" data-damage="{{ player['totalDamageDealtToChampions'] }}">Damage: </span>
+                  <span>Vision: {{ player['visionScore'] }}</span>
+                </div>
+                <div class="items-grid">
+                  {% for i in range(0, 6) %}
+                    <img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/item/{{ itemMap[player['item' ~ i]] }}" alt="Item" onerror="this.style.display='none';">
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Red Team Section -->
+        <div class="team red-team">
+          <div class="bans-container">
+            {% for ban in match['data']['info']['teams'][1]['bans'] %}
+              <img class="ban-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[ban['championId']] }}.png" alt="Ban">
+            {% endfor %}
+          </div>
+          <div class="player-list">
+            {% for player in match['data']['info']['participants'] if player['teamId'] == 200 %}
+            <div class="player">
+              <img class="champion-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[player['championId']] }}.png" alt="{{ player['championName'] }}">
+              <div class="player-info">
+                <button class="player-button" onclick="window.location.href='{{ url_for('player_detail', object_id=player['_id']|string) }}'">
+                  {{ player['summonerName'] }}
+                </button>
+                <div class="player-stats">
+                  <span>KDA: {{ player['kills'] }}/{{ player['deaths'] }}/{{ player['assists'] }}</span>
+                  <span class="gold" data-gold="{{ player['goldEarned'] }}">Gold: </span>
+                  <span class="damage" data-damage="{{ player['totalDamageDealtToChampions'] }}">Damage: </span>
+                  <span>Vision: {{ player['visionScore'] }}</span>
+                </div>
+                <div class="items-grid">
+                  {% for i in range(0, 6) %}
+                    <img class="item-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/item/{{ itemMap[player['item' ~ i]] }}" alt="Item" onerror="this.style.display='none';">
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  async function loadGameData() {
+    try {
+      const versionResponse = await fetch('https://ddragon.leagueoflegends.com/api/versions.json');
+      const versions = await versionResponse.json();
+      const latestVersion = versions[0];
+
+      const championResponse = await fetch(`https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/en_US/champion.json`);
+      const championData = await championResponse.json();
+      const itemResponse = await fetch(`https://ddragon.leagueoflegends.com/cdn/${latestVersion}/data/en_US/item.json`);
+      const itemData = await itemResponse.json();
+
+      Object.values(championData.data).forEach(champion => {
+        championMap[parseInt(champion.key)] = champion.id;
+      });
+
+      Object.entries(itemData.data).forEach(([id, item]) => {
+        itemMap[parseInt(id)] = item.image.full;
+      });
+
+      console.log("Game data loaded successfully.");
+    } catch (error) {
+      console.error('Error fetching game data:', error);
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', loadGameData);
+
+  function filterList() {
+    const input = document.getElementById('searchInput');
+    const filter = input.value.toLowerCase();
+    const dataBars = document.querySelectorAll('.data-bar');
+
+    dataBars.forEach(bar => {
+      const textValue = bar.textContent || bar.innerText;
+      bar.style.display = textValue.toLowerCase().indexOf(filter) > -1 ? '' : 'none';
+    });
+  }
+
+  function toggleDetails(itemId) {
+    const details = document.getElementById(`details-${itemId}`);
+    details.style.display = details.style.display === 'none' ? 'block' : 'none';
+  }
+</script>
+
+
+<style>
+  .data-container {
+    margin-bottom: 15px;
+  }
+
+  .data-bar {
+    padding: 10px;
+    border: 1px solid var(--bg-medium-blue);
+    margin: 5px 0;
+    cursor: pointer;
+    background-color: var(--bg-dark-blue);
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    color: var(--text-light-gray);
+  }
+
+  .data-bar:hover {
+    background-color: var(--bg-darker-blue);
+  }
+
+  .data-summary {
+    flex-grow: 1;
+  }
+
+  .details-button {
+    padding: 5px 10px;
+    background-color: var(--accent-gold);
+    color: var(--bg-darkest-blue);
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .details-button:hover {
+    background-color: var(--accent-light-gold);
+    color: var(--bg-dark-blue);
+  }
+
+  .team-button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    margin: 0 5px;
+    color: var(--text-light-gray);
+    background-color: var(--bg-medium-blue);
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .team-button:hover {
+    background-color: var(--bg-darker-blue);
+    color: var(--white);
+  }
+
+  .winner-team {
+    background-color: var(--green);
+    color: var(--white);
+  }
+
+  .loser-team {
+    background-color: var(--red);
+    color: var(--white);
+  }
+
+  .data-details {
+    padding: 10px;
+    border-top: 1px solid var(--bg-medium-blue);
+    display: none;
+    margin-top: 10px;
+    background-color: var(--bg-darker-blue);
+    border-radius: 8px;
+    color: var(--text-light-gray);
+  }
+
+  .teams-container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .team {
+    width: 48%;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: var(--bg-medium-blue);
+  }
+
+  .blue-team {
+    background-color: #0f213f; /* A subtle blue background fitting the dark theme */
+    border: 1px solid var(--bg-dark-blue);
+  }
+
+  .red-team {
+    background-color: #3a1a1a; /* A subtle red background fitting the dark theme */
+    border: 1px solid var(--bg-dark-blue);
+  }
+
+  .bans-container {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+
+  .ban-icon {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--bg-dark-blue);
+    border-radius: 5px;
+  }
+
+  .player-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .player {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-dark-blue);
+    padding: 10px;
+    border: 1px solid var(--bg-medium-blue);
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    color: var(--text-light-gray);
+  }
+
+  .champion-icon {
+    width: 60px;
+    height: 60px;
+    margin-right: 10px;
+    border-radius: 5px;
+    border: 1px solid var(--bg-dark-blue);
+  }
+
+  .player-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .items-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 24px);
+    grid-gap: 2px;
+    margin-top: 5px;
+  }
+
+  .item-icon {
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--bg-dark-blue);
+    border-radius: 3px;
+  }
+</style>
+
+
+{% endblock %}

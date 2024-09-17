@@ -1,0 +1,273 @@
+<!-- templates/team_detail.html -->
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="team-detail-container">
+    <!-- Header Section -->
+    <div class="header-section">
+        <h2>{{ team_detail['team_name'] }}</h2>
+        <p><strong>Split:</strong> {{ team_detail['split'] }} | <strong>Division:</strong> {{ team_detail['division'] }}</p>
+    </div>
+
+    <!-- Main Layout Grid -->
+    <div class="main-layout">
+        <!-- Stats Section -->
+        <div class="stats-section">
+            <h3>Team Stats</h3>
+            <p><strong>Wins:</strong> {{ team_detail['stats_totals'].get('wins', 0) }}</p>
+            <p><strong>Losses:</strong> {{ team_detail['stats_totals'].get('losses', 0) }}</p>
+            <p><strong>Average Kills:</strong> {{ (team_detail['stats_totals'].get('kills', 0) / (team_detail['stats_totals'].get('matches', 1))) | round(1) }}</p>
+            <p><strong>Average Deaths:</strong> {{ (team_detail['stats_totals'].get('deaths', 0) / (team_detail['stats_totals'].get('matches', 1))) | round(1) }}</p>
+            <p><strong>Average Assists:</strong> {{ (team_detail['stats_totals'].get('assists', 0) / (team_detail['stats_totals'].get('matches', 1))) | round(1) }}</p>
+        </div>
+
+        <!-- Champion Statistics Section -->
+        <div class="champion-stats-section">
+            <div class="champion-table">
+                <div class="champ-column">
+                    <div class="header-container">
+                        <div class="header-box">
+                            <h4>Played</h4>
+                        </div>
+                        <div class="total-box">
+                            <p>Total: {{ team_detail['champions_played'] | length }}</p>
+                        </div>
+                    </div>
+                    <ul class="scrollable-list">
+                        {% for champ_name, count in team_detail['champions_played'] | dictsort(reverse=true, by='value') %}
+                        <li>
+                            <div class="champion-item">
+                                <img src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ champ_name }}.png" alt="{{ champ_name }}" class="champ-icon">
+                                <span class="champ-count">{{ count }}</span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="champ-column">
+                    <div class="header-container">
+                        <div class="header-box">
+                            <h4>Banned Against</h4>
+                        </div>
+                        <div class="total-box">
+                            <p>Total: {{ team_detail['bans_against'] | length }}</p>
+                        </div>
+                    </div>
+                    <ul class="scrollable-list">
+                        {% for champ_id, count in team_detail['bans_against'] | dictsort(reverse=true, by='value') %}
+                        <li>
+                            {% set champ_name = championMap[champ_id|int] if champ_id|int in championMap else 'Unknown' %}
+                            <div class="champion-item">
+                                <img class="champ-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ champ_name }}.png" alt="{{ champ_name }}">
+                                <span class="champ-count">{{ count }}</span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="champ-column">
+                    <div class="header-container">
+                        <div class="header-box">
+                            <h4>Banned</h4>
+                        </div>
+                        <div class="total-box">
+                            <p>Total: {{ team_detail['bans_made'] | length }}</p>
+                        </div>
+                    </div>
+                    <ul class="scrollable-list">
+                        {% for champ_id, count in team_detail['bans_made'] | dictsort(reverse=true, by='value') %}
+                        <li>
+                            {% set champ_name = championMap[champ_id|int] if champ_id|int in championMap else 'Unknown' %}
+                            <div class="champion-item">
+                                <img class="champ-icon" src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ champ_name }}.png" alt="{{ champ_name }}">
+                                <span class="champ-count">{{ count }}</span>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Match History Section -->
+        <div class="match-history-section">
+            <h3>Match History</h3>
+            <ul>
+                {% for match in team_detail['match_history'] %}
+                <li>
+                    <a href="{{ url_for('match_detail', object_id=match['_id']|string) }}">
+                        {{ match['date'] }} - Match ID: {{ match['data']['match_id'] }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Current Roster Section -->
+        <div class="roster-section">
+            <h3>Current Roster</h3>
+            <ul>
+                {% for player in team_detail['current_roster'] %}
+                <li>
+                    <a href="{{ url_for('player_detail', object_id=player['_id']) }}">
+                        {{ player['summoner_names'][0] }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<style>
+    .team-detail-container {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .header-section {
+        text-align: center;
+    }
+
+    .main-layout {
+        display: grid;
+        grid-template-columns: 1.8fr 1.3fr;
+        grid-template-rows: auto auto;
+        gap: 10px;
+    }
+
+    .stats-section {
+        grid-column: 1 / 2;
+        border: 1px solid var(--bg-medium-blue);
+        padding: 10px;
+        background-color: var(--bg-dark-blue);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .champion-stats-section {
+        grid-column: 2 / 3;
+        border: 1px solid var(--bg-medium-blue);
+        padding: 10px;
+        background-color: var(--bg-dark-blue);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 500px;
+    }
+
+    .champion-table {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .champ-column {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        overflow-y: auto;
+        max-height: 300px;
+        width: 33.333%;
+        flex-grow: 1;
+    }
+
+    .header-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        height: 80px; /* Standardized height for the header box */
+        margin-bottom: 10px;
+    }
+
+    .header-box, .total-box {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 40px; /* Fixed height for uniform sizing */
+        width: 100%;
+        text-align: center;
+    }
+
+    .header-box h4, .total-box p {
+        margin: 0;
+        font-size: clamp(14px, 2vw, 16px); /* Dynamic font size adjustment */
+    }
+
+    .scrollable-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        overflow-y: auto;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+    }
+
+    .scrollable-list::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .scrollable-list::-webkit-scrollbar-thumb {
+        background: var(--accent-light-gold);
+        border-radius: 10px;
+    }
+
+    .scrollable-list::-webkit-scrollbar-track {
+        background: var(--bg-dark-blue);
+        border-radius: 10px;
+    }
+
+    .champion-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .champ-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 5px;
+    }
+
+    .champ-count {
+        font-weight: bold;
+        color: var(--text-light);
+    }
+
+    .match-history-section {
+        grid-column: 1 / 2;
+        border: 1px solid var(--bg-medium-blue);
+        padding: 10px;
+        background-color: var(--bg-dark-blue);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 250px;
+    }
+
+    .roster-section {
+        grid-column: 2 / 3;
+        border: 1px solid var(--bg-medium-blue);
+        padding: 10px;
+        background-color: var(--bg-dark-blue);
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-height: 300px;
+    }
+</style>
+
+{% endblock %}
