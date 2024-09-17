@@ -246,6 +246,7 @@ def team_detail(object_id):
     team = db['teams'].find_one({"_id": ObjectId(object_id)})
 
     if not team:
+        print("Team not found")
         return "Team not found", 404
 
     # Retrieve current roster
@@ -256,27 +257,67 @@ def team_detail(object_id):
     team['current_roster'] = current_roster
 
     # Fetch the last 10 matches and their details
-    match_history_ids = team.get('match_history', [])[-10:]
+    match_history_ids = team.get('match_history', [])
     matches = list(db['matches'].find({
         '_id': {
             '$in': [ObjectId(match_id) for match_id in match_history_ids if ObjectId.is_valid(match_id)]
         }
     }))
-    for match in matches:
-        game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
-        match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S') if game_start_timestamp else "Date not available"
 
-        resolved_teams = []
-        for team_id in match.get('teams', []):
-            resolved_team = db['teams'].find_one(
-                {"_id": ObjectId(team_id)} if ObjectId.is_valid(team_id) else {"team_name": team_id}
-            )
-            resolved_teams.append(resolved_team if resolved_team else {"team_name": team_id})
-        match['teams'] = resolved_teams
+    # Initialize wins and losses counters
+    wins = 0
+    losses = 0
+
+    # Debugging output for matches fetched
+    print(f"Total matches found: {len(matches)}")
+
+    # Get the team's name for comparison
+    current_team_name = team.get('team_name', 'Unknown')
+
+    # Process each match to determine wins and losses
+    for match in matches:
+        print(f"Processing match: {match.get('_id')}")
+
+        # Extract teams involved in the match
+        match_teams = match.get('teams', [])
+        print(f"Teams in match: {match_teams}")
+
+        # Ensure the current team is part of this match
+        if current_team_name not in match_teams:
+            print(f"Current team ({current_team_name}) is NOT in the match.")
+            continue
+
+        # Retrieve the winner information based on team ID
+        match_info = match.get('data', {}).get('info', {}).get('teams', [])
+        if len(match_info) != 2:
+            print("Match info does not have exactly two teams.")
+            continue
+        
+        # Map the team names to their respective IDs
+        team_100_name = match_teams[0] if match_info[0]['teamId'] == 100 else match_teams[1]
+        team_200_name = match_teams[1] if match_info[1]['teamId'] == 200 else match_teams[0]
+
+        print(f"Team 100: {team_100_name}, Team 200: {team_200_name}")
+
+        # Determine if the current team won or lost
+        if current_team_name == team_100_name and match_info[0]['win']:
+            wins += 1
+            print(f"Current team ({current_team_name}) won the match. Total wins: {wins}")
+        elif current_team_name == team_200_name and match_info[1]['win']:
+            wins += 1
+            print(f"Current team ({current_team_name}) won the match. Total wins: {wins}")
+        else:
+            losses += 1
+            print(f"Current team ({current_team_name}) lost the match. Total losses: {losses}")
+
+    # Debug output for final win/loss tally
+    print(f"Final Wins: {wins}, Final Losses: {losses}")
 
     team['match_history'] = matches
+    team['wins'] = wins
+    team['losses'] = losses
 
-    # Ensure `latestVersion` and `championMap` are passed correctly
+    # Pass `latestVersion` and `championMap` correctly
     return render_template('team_detail.html', team_detail=team, latestVersion=latest_version, championMap=champion_map)
 
 

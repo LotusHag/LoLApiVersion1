@@ -1,4 +1,4 @@
-<!-- templates/team_detail.html -->
+i<!-- templates/team_detail.html -->
 
 {% extends 'base.html' %}
 
@@ -15,8 +15,7 @@
         <!-- Stats Section -->
         <div class="stats-section">
             <h3>Team Stats</h3>
-            <p><strong>Wins:</strong> {{ team_detail['stats_totals'].get('wins', 0) }}</p>
-            <p><strong>Losses:</strong> {{ team_detail['stats_totals'].get('losses', 0) }}</p>
+            <p><strong>Win Rate:</strong> {{ (team_detail['wins'] / (team_detail['wins'] + team_detail['losses'])) * 100 | round(1) }}% | <strong>Wins:</strong> {{ team_detail['wins'] }} | <strong>Losses:</strong> {{ team_detail['losses'] }}</p>
             <p><strong>Average Kills:</strong> {{ (team_detail['stats_totals'].get('kills', 0) / (team_detail['stats_totals'].get('matches', 1))) | round(1) }}</p>
             <p><strong>Average Deaths:</strong> {{ (team_detail['stats_totals'].get('deaths', 0) / (team_detail['stats_totals'].get('matches', 1))) | round(1) }}</p>
             <p><strong>Average Assists:</strong> {{ (team_detail['stats_totals'].get('assists', 0) / (team_detail['stats_totals'].get('matches', 1))) | round(1) }}</p>
@@ -97,9 +96,36 @@
             <h3>Match History</h3>
             <ul>
                 {% for match in team_detail['match_history'] %}
+                {% set current_team_name = team_detail['team_name'] %}
+                {% set team_100_name = match['teams'][0] %}
+                {% set team_200_name = match['teams'][1] %}
+                {% set match_info = match['data']['info']['teams'] %}
+                {% set is_current_team_100 = (current_team_name == team_100_name) %}
+                {% set current_team_won = (is_current_team_100 and match_info[0]['win']) or (not is_current_team_100 and match_info[1]['win']) %}
                 <li>
-                    <a href="{{ url_for('match_detail', object_id=match['_id']|string) }}">
-                        {{ match['date'] }} - Match ID: {{ match['data']['match_id'] }}
+                    <a href="{{ url_for('match_detail', object_id=match['_id']|string) }}" class="match-button {% if current_team_won %}win{% else %}loss{% endif %}">
+                        <div class="champ-icons">
+                            <div class="team-100-champs">
+                                <span class="team-name">{{ team_100_name }}</span>
+                                <div class="icons">
+                                    {% for participant in match['data']['info']['participants'] %}
+                                    {% if participant['teamId'] == 100 %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[participant['championId']] }}.png" alt="{{ championMap[participant['championId']] }}">
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="team-200-champs">
+                                <span class="team-name">{{ team_200_name }}</span>
+                                <div class="icons">
+                                    {% for participant in match['data']['info']['participants'] %}
+                                    {% if participant['teamId'] == 200 %}
+                                    <img src="https://ddragon.leagueoflegends.com/cdn/{{ latestVersion }}/img/champion/{{ championMap[participant['championId']] }}.png" alt="{{ championMap[participant['championId']] }}">
+                                    {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
                     </a>
                 </li>
                 {% endfor %}
@@ -185,7 +211,7 @@
         flex-direction: column;
         align-items: center;
         justify-content: space-between;
-        height: 80px; /* Standardized height for the header box */
+        height: 80px;
         margin-bottom: 10px;
     }
 
@@ -193,14 +219,14 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        height: 40px; /* Fixed height for uniform sizing */
+        height: 40px;
         width: 100%;
         text-align: center;
     }
 
     .header-box h4, .total-box p {
         margin: 0;
-        font-size: clamp(14px, 2vw, 16px); /* Dynamic font size adjustment */
+        font-size: clamp(14px, 2vw, 16px);
     }
 
     .scrollable-list {
@@ -254,20 +280,83 @@
         display: flex;
         flex-direction: column;
         gap: 10px;
-        max-height: 250px;
+        max-height: 350px; /* Extended height */
+        overflow-y: auto; /* Enable scrolling */
     }
 
-    .roster-section {
-        grid-column: 2 / 3;
-        border: 1px solid var(--bg-medium-blue);
-        padding: 10px;
-        background-color: var(--bg-dark-blue);
+    .match-history-section ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .match-history-section li {
+        margin-bottom: 5px;
+    }
+
+    .match-button {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2px 10px;
         border-radius: 8px;
+        text-decoration: none;
+        color: #fff;
+        background-color: var(--bg-medium-blue);
+        transition: background-color 0.3s ease;
+        font-size: 12px;
+        height: 36px;
+        position: relative;
+    }
+
+    .match-button.win {
+        background-color: #28a745;
+    }
+
+    .match-button.loss {
+        background-color: #dc3545;
+    }
+
+    .match-button:hover {
+        background-color: rgba(255, 255, 255, 0.1); /* Lighten the button color on hover */
+    }
+
+    .champ-icons {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        justify-content: space-around;
+        width: 100%;
+    }
+
+    .champ-icons .team-name {
+        font-weight: bold;
+        font-size: 11px;
+        text-align: center;
+        margin-bottom: 2px;
+    }
+
+    .icons {
+        display: flex;
+        gap: 1px;
+        justify-content: center;
+    }
+
+    .icons img {
+        width: 18px;
+        height: 18px;
+        border-radius: 3px;
+    }
+
+    .team-100-champs,
+    .team-200-champs {
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        max-height: 300px;
+        align-items: center;
+        gap: 1px;
     }
 </style>
+
+
 
 {% endblock %}
