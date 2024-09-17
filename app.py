@@ -64,7 +64,13 @@ def number_format(value):
 # Custom filter to format dates
 @app.template_filter('datetimeformat')
 def datetimeformat(value, format='%Y-%m-%d %H:%M:%S'):
-    return datetime.utcfromtimestamp(value).strftime(format)
+    try:
+        # Assuming value is in milliseconds, convert to seconds
+        value_in_seconds = value / 1000 if value > 1000000000000 else value
+        return datetime.utcfromtimestamp(value_in_seconds).strftime(format)
+    except (OSError, ValueError) as e:
+        # Handle invalid timestamps gracefully
+        return "Invalid Date"
 
 @app.route('/')
 def index():
@@ -206,39 +212,78 @@ def player_detail(object_id):
     """Display detailed information about a specific player."""
     player = None
     try:
-        # Attempt to fetch using ObjectId
+        # Fetch player details using ObjectId
         player = db['players'].find_one({"_id": ObjectId(object_id)})
     except Exception:
-        # Fallback searches using other identifiers
-        player = db['players'].find_one({"_id": object_id}) or db['players'].find_one({"summoner_ids": object_id}) or db['players'].find_one({"custom_id": object_id})
+        # Fallback if ObjectId isn't valid
+        player = db['players'].find_one({"_id": object_id}) or \
+                 db['players'].find_one({"summoner_ids": object_id})
 
     if not player:
         return "Player not found", 404
 
-    # Retrieve the current teams of the player
-    player['current_teams'] = [db['teams'].find_one({"_id": ObjectId(team_id)}) for team_id in player.get('current_teams', []) if ObjectId.is_valid(team_id)]
+    # Retrieve the player's current teams
+    player['current_teams'] = [
+        db['teams'].find_one({"_id": ObjectId(team_id)}) 
+        for team_id in player.get('current_teams', []) if ObjectId.is_valid(team_id)
+    ]
 
-    # Fetch the last 10 matches and their details
-    match_ids = player.get('match_history', [])[:10]  # Get the first 10 matches
+    # Fetch match history details
+    match_ids = player.get('match_history', [])[:10]  # Fetch the latest 10 matches
     matches = []
     for match_id in match_ids:
         match = db['matches'].find_one({"_id": ObjectId(match_id)})
         if match:
-            # Resolve team details and identify the winner
+            match['latestVersion'] = latest_version
+            match['championMap'] = champion_map
+
+            # Resolve the teams and determine win/loss
             resolved_teams = []
             for team_id in match.get('teams', []):
-                resolved_team = db['teams'].find_one({"_id": ObjectId(team_id)}) if ObjectId.is_valid(team_id) else {"team_name": "Unknown Team"}
-                if resolved_team:
-                    resolved_team['winner'] = resolved_team.get('winner', False)
-                    resolved_teams.append(resolved_team)
+                resolved_team = db['teams'].find_one(
+                    {"_id": ObjectId(team_id)} if ObjectId.is_valid(team_id) else {"team_name": team_id}
+                ) or {"team_name": "Unknown Team"}
+                resolved_teams.append(resolved_team)
             match['teams'] = resolved_teams
 
-            # Add date and match details
+            # Determine which team the player was on
+            player_team = None
+            opponent_team = None
+            player_team_win = False
+
+            for participant in match['data']['info']['participants']:
+                if participant['summonerId'] in player['summoner_ids']:
+                    if participant['teamId'] == 100:
+                        player_team = match['teams'][0]
+                        opponent_team = match['teams'][1]
+                        player_team_win = match['data']['info']['teams'][0]['win']
+                    else:
+                        player_team = match['teams'][1]
+                        opponent_team = match['teams'][0]
+                        player_team_win = match['data']['info']['teams'][1]['win']
+
+            # Add the timestamp for sorting
             game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
             match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S') if game_start_timestamp else "Date not available"
+            match['timestamp'] = game_start_timestamp or 0  # Set to 0 if None, to handle sorting
+
+            match['player_team'] = player_team
+            match['opponent_team'] = opponent_team
+            match['player_team_win'] = player_team_win
             matches.append(match)
 
-    return render_template('player_detail.html', player_detail=player, matches=matches, latestVersion=latest_version, championMap=champion_map)
+    # Sort matches by timestamp in ascending order, oldest to newest
+    matches.sort(key=lambda x: x['timestamp'] if x['timestamp'] is not None else 0, reverse=False)
+
+    return render_template(
+        'player_detail.html', 
+        player_detail=player, 
+        matches=matches, 
+        latestVersion=latest_version, 
+        championMap=champion_map
+    )
+
+
 
 @app.route('/team_detail/<object_id>')
 def team_detail(object_id):

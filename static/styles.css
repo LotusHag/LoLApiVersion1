@@ -1,3 +1,5 @@
+/* static/styles.css */
+
 /* Define color variables at the root level */
 :root {
     /* Background Colors */
@@ -234,4 +236,19 @@ input, select, textarea {
     padding: 15px;
     background-color: var(--bg-darker-blue);
     border-radius: 8px;
+}
+
+/* Custom scrollbar styling for scrollable lists */
+.scrollable-list::-webkit-scrollbar {
+    width: 4px; /* Thin scrollbar */
+}
+
+.scrollable-list::-webkit-scrollbar-thumb {
+    background: var(--accent-light-gold); /* Gold color for the scrollbar thumb */
+    border-radius: 10px; /* Rounded corners for a smooth look */
+}
+
+.scrollable-list::-webkit-scrollbar-track {
+    background: var(--bg-dark-blue); /* Dark blue for the scrollbar track */
+    border-radius: 10px; /* Rounded corners for a smooth look */
 }
