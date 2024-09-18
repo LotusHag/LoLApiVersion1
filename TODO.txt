@@ -3,7 +3,6 @@ Match list page
 	use postgame template and thinner bars for it aswell as buttons/selection fields for different divisions/splits
 
 match detail page
-	needs to have the team hyperlinks also be buttons
 	fix the stats in the table at the bottom so they are fetched correctly
 
 postgame_template page

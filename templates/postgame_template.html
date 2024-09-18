@@ -33,7 +33,7 @@
                     </td>
                     <td class="name">
                         <div class="summoner-tooltip" style="position: relative;">
-                            <a href="{{ url_for('player_detail', object_id=match.player_ids[player.summonerId]) }}">{{ player.summonerName }}</a>
+                            <a href="{{ url_for('player_detail', object_id=match.player_ids[player.summonerId]) }}" class="summoner-button">{{ player.summonerName }}</a>
                         </div>
                         <div class="tier">
                             <div style="position: relative;">{{ player.individualPosition }}</div>
@@ -170,7 +170,7 @@
                     </td>
                     <td class="name">
                         <div class="summoner-tooltip" style="position: relative;">
-                            <a href="{{ url_for('player_detail', object_id=match.player_ids[player.summonerId]) }}">{{ player.summonerName }}</a>
+                            <a href="{{ url_for('player_detail', object_id=match.player_ids[player.summonerId]) }}" class="summoner-button">{{ player.summonerName }}</a>
                         </div>
                         <div class="tier">
                             <div style="position: relative;">{{ player.individualPosition }}</div>
@@ -197,155 +197,155 @@
             </tbody>
         </table>
     </div>
-
-    <style>
-        .postgame-container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
-            padding: 0 20px;
-            flex-wrap: nowrap;
-        }
-
-        .team-box {
-            flex: 0 1 48%;
-            max-width: 850px;
-            min-width: 500px;
-            padding: 10px;
-            border: 2px solid var(--bg-medium-blue);
-            border-radius: 8px;
-            box-sizing: border-box;
-            overflow: hidden;
-        }
-
-        .blue-team {
-            background-color: #28344E; /* Updated blue side background */
-        }
-
-        .red-team {
-            background-color: #59343B; /* Updated red side background */
-        }
-
-        .team-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .team-table th,
-        .team-table td {
-            padding: 5px;
-            font-size: 12px;
-            color: var(--text-light);
-        }
-
-        .team-table thead th {
-            background-color: var(--bg-darkest-blue);
-            text-align: center;
-        }
-
-        .player-row {
-            text-align: center;
-            border-bottom: 1px solid var(--bg-medium-blue);
-        }
-
-        .champion img {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-        }
-
-        .level {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            font-size: 10px;
-            padding: 1px 3px;
-            border-radius: 3px;
-        }
-
-        .spells img,
-        .runes img {
-            width: 16px;
-            height: 16px;
-            margin: 0;
-            border-radius: 2px;
-            background-color: transparent;
-            border: none;
-            box-shadow: none;
-        }
-
-        .items img {
-            width: 22px;
-            height: 22px;
-            border-radius: 4px;
-            background-color: transparent;
-            border: none;
-            box-shadow: none;
-        }
-
-        .item-container {
-            display: flex;
-            gap: 1px; /* Ensuring 1px spacing between items */
-            align-items: center;
-        }
-
-        .item-container-reverse {
-            display: flex;
-            gap: 1px; /* Ensuring 1px spacing between items */
-            align-items: center;
-            flex-direction: row-reverse; /* Trinket on the left side for red team */
-        }
-
-        .item-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            grid-template-rows: repeat(2, 1fr);
-            gap: 1px; /* Adjusted spacing between items */
-            justify-content: center;
-        }
-
-        .trinket-slot {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 22px;
-            height: 22px;
-            border: none;
-            background-color: transparent;
-            border-radius: 4px;
-        }
-
-        .item-slot {
-            width: 22px;
-            height: 22px;
-            position: relative;
-            background-color: transparent;
-            border: none;
-            box-shadow: none;
-        }
-
-        .items .no-item {
-            background-color: transparent;
-        }
-
-        .result.victory {
-            color: var(--green);
-            font-weight: bold;
-        }
-
-        .result.defeat {
-            color: var(--red);
-            font-weight: bold;
-        }
-
-        @media (max-width: 1200px) {
-            .team-box {
-                flex: 1 1 100%;
-                max-width: 100%;
-            }
-        }
-    </style>
 </div>
+
+<style>
+    .postgame-container {
+        display: flex;
+        justify-content: center;
+        gap: 20px;
+        padding: 0 20px;
+        flex-wrap: nowrap;
+    }
+
+    .team-box {
+        flex: 0 1 48%;
+        max-width: 600px;
+        min-width: 475px;
+        padding: 10px;
+        border: 2px solid var(--bg-medium-blue);
+        border-radius: 8px;
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+
+    .blue-team {
+        background-color: #28344E; /* Updated blue side background */
+    }
+
+    .red-team {
+        background-color: #59343B; /* Updated red side background */
+    }
+
+    .team-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .team-table th,
+    .team-table td {
+        padding: 5px;
+        font-size: 12px;
+        color: var(--text-light);
+    }
+
+    .team-table thead th {
+        background-color: var(--bg-darkest-blue);
+        text-align: center;
+    }
+
+    .player-row {
+        text-align: center;
+        border-bottom: 1px solid var(--bg-medium-blue);
+    }
+
+    .champion img {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+    }
+
+    .level {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        font-size: 10px;
+        padding: 1px 3px;
+        border-radius: 3px;
+    }
+
+    .spells img,
+    .runes img {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        border-radius: 2px;
+        background-color: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    .items img {
+        width: 22px;
+        height: 22px;
+        border-radius: 4px;
+        background-color: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    .item-container {
+        display: flex;
+        gap: 1px; /* Ensuring 1px spacing between items */
+        align-items: center;
+    }
+
+    .item-container-reverse {
+        display: flex;
+        gap: 1px; /* Ensuring 1px spacing between items */
+        align-items: center;
+        flex-direction: row-reverse; /* Trinket on the left side for red team */
+    }
+
+    .item-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        gap: 1px; /* Adjusted spacing between items */
+        justify-content: center;
+    }
+
+    .trinket-slot {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border: none;
+        background-color: transparent;
+        border-radius: 4px;
+    }
+
+    .item-slot {
+        width: 22px;
+        height: 22px;
+        position: relative;
+        background-color: transparent;
+        border: none;
+        box-shadow: none;
+    }
+
+    .items .no-item {
+        background-color: transparent;
+    }
+
+    .result.victory {
+        color: var(--green);
+        font-weight: bold;
+    }
+
+    .result.defeat {
+        color: var(--red);
+        font-weight: bold;
+    }
+
+    @media (max-width: 1200px) {
+        .team-box {
+            flex: 1 1 100%;
+            max-width: 100%;
+        }
+    }
+</style>
 {% endmacro %}

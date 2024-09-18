@@ -213,9 +213,9 @@ def match_detail(object_id):
     # Create a mapping of summonerId to player ObjectId
     player_ids = {}
     for player in match.get('data', {}).get('info', {}).get('participants', []):
-        player_object = db['players'].find_one({"summonerId": player['summonerId']})
+        player_object = db['players'].find_one({"summoner_ids": player['summonerId']})  # Matching using summoner_ids array
         if player_object:
-            player_ids[player['summonerId']] = str(player_object['_id'])
+            player_ids[player['summonerId']] = str(player_object['_id'])  # Use player ObjectId
             print(f"Player found: {player['summonerName']} with ObjectId: {player_object['_id']}")
         else:
             print(f"Player with summonerId {player['summonerId']} not found in the database.")
