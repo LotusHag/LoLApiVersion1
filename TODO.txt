@@ -24,9 +24,13 @@ player detail page
 	fix the match history to be in a table format and to actually correctly display the teams, win or loss, the champion played, and the kda of the player and the date
 
 
+
+Newly implemented:
 data analysis page
+	Have a general filter
 	Be able to filter based on Split, Division, Category:Player/Team,
 	Then be able to filter based on certain stats
+
 	
 input page
 

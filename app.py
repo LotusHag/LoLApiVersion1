@@ -193,9 +193,11 @@ def match_detail(object_id):
     match['runeStyleMap'] = rune_style_map
     match['spellMap'] = spell_map
 
+    # Game date
     game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
     match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S') if game_start_timestamp else "Date not available"
 
+    # Resolve team names
     resolved_teams = []
     for team_id in match.get('teams', []):
         try:
@@ -205,7 +207,18 @@ def match_detail(object_id):
             resolved_teams.append({"team_name": team_id})
     match['teams'] = resolved_teams
 
+    # Create a mapping of summonerId to player _id
+    player_ids = {}
+    for player in match.get('data', {}).get('info', {}).get('participants', []):
+        player_object = db['players'].find_one({"summonerId": player['summonerId']})
+        if player_object:
+            player_ids[player['summonerId']] = str(player_object['_id'])
+
+    # Add player_ids to match object
+    match['player_ids'] = player_ids
+
     return render_template('match_detail.html', match_detail=match)
+
 
 @app.route('/player_detail/<object_id>')
 def player_detail(object_id):
@@ -231,6 +244,12 @@ def player_detail(object_id):
     # Fetch match history details
     match_ids = player.get('match_history', [])[:10]  # Fetch the latest 10 matches
     matches = []
+    win_count = 0
+    total_time_spent = 0  # Total time spent in-game (in seconds)
+
+    # Initialize stats_totals
+    player['stats_totals'] = {}
+
     for match_id in match_ids:
         match = db['matches'].find_one({"_id": ObjectId(match_id)})
         if match:
@@ -248,19 +267,25 @@ def player_detail(object_id):
 
             # Determine which team the player was on
             player_team = None
-            opponent_team = None
             player_team_win = False
+            game_duration = match.get('data', {}).get('info', {}).get('gameDuration', 0)
+            total_time_spent += game_duration  # Add the match duration to the total time spent
 
             for participant in match['data']['info']['participants']:
                 if participant['summonerId'] in player['summoner_ids']:
                     if participant['teamId'] == 100:
                         player_team = match['teams'][0]
-                        opponent_team = match['teams'][1]
                         player_team_win = match['data']['info']['teams'][0]['win']
                     else:
                         player_team = match['teams'][1]
-                        opponent_team = match['teams'][0]
                         player_team_win = match['data']['info']['teams'][1]['win']
+                    if player_team_win:
+                        win_count += 1  # Increment win count if the player was on the winning team
+
+                    # Aggregate stats for averages
+                    for stat_key, stat_value in participant.items():
+                        if isinstance(stat_value, (int, float)):
+                            player['stats_totals'][stat_key] = player['stats_totals'].get(stat_key, 0) + stat_value
 
             # Add the timestamp for sorting
             game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
@@ -268,21 +293,29 @@ def player_detail(object_id):
             match['timestamp'] = game_start_timestamp or 0  # Set to 0 if None, to handle sorting
 
             match['player_team'] = player_team
-            match['opponent_team'] = opponent_team
             match['player_team_win'] = player_team_win
             matches.append(match)
 
     # Sort matches by timestamp in ascending order, oldest to newest
     matches.sort(key=lambda x: x['timestamp'] if x['timestamp'] is not None else 0, reverse=False)
 
+    # Convert total time spent to hours, minutes, and seconds format
+    total_time_spent_hours = total_time_spent // 3600
+    total_time_spent_minutes = (total_time_spent % 3600) // 60
+    total_time_spent_seconds = total_time_spent % 60
+
+    formatted_total_time_spent = f"{total_time_spent_hours}h {total_time_spent_minutes}m {total_time_spent_seconds}s"
+
     return render_template(
         'player_detail.html', 
         player_detail=player, 
         matches=matches, 
+        win_count=win_count,
+        total_time_spent_in_seconds=total_time_spent,  # Pass total time in seconds
+        total_time_spent=formatted_total_time_spent,  # Pass formatted total time
         latestVersion=latest_version, 
         championMap=champion_map
     )
-
 
 
 @app.route('/team_detail/<object_id>')

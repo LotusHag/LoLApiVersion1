@@ -1,5 +1,3 @@
-<!-- templates/postgame_template.html -->
-
 {% macro postgame_stats(match) %}
 <div class="postgame-container">
     <div class="team-box blue-team">
@@ -35,7 +33,7 @@
                     </td>
                     <td class="name">
                         <div class="summoner-tooltip" style="position: relative;">
-                            <a href="{{ url_for('player_detail', object_id=player._id) }}">{{ player.summonerName }}</a>
+                            <a href="{{ url_for('player_detail', object_id=match.player_ids[player.summonerId]) }}">{{ player.summonerName }}</a>
                         </div>
                         <div class="tier">
                             <div style="position: relative;">{{ player.individualPosition }}</div>
@@ -172,7 +170,7 @@
                     </td>
                     <td class="name">
                         <div class="summoner-tooltip" style="position: relative;">
-                            <a href="{{ url_for('player_detail', object_id=player._id) }}">{{ player.summonerName }}</a>
+                            <a href="{{ url_for('player_detail', object_id=match.player_ids[player.summonerId]) }}">{{ player.summonerName }}</a>
                         </div>
                         <div class="tier">
                             <div style="position: relative;">{{ player.individualPosition }}</div>

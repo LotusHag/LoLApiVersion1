@@ -4,9 +4,20 @@
 
 {% block content %}
 <div class="player-detail-container">
-    <!-- Player Name and Total Matches Played -->
+    <!-- Player Name and Total Matches Played with Winrate -->
     <h2>{{ player_detail['summoner_names'] | join(', ') }}</h2>
-    <p>Total Matches Played: {{ player_detail['match_history']|length }}</p>
+    <p>
+        <strong>Winrate:</strong> 
+        {% if matches|length > 0 %}
+            {{ (win_count / matches|length) * 100 | round(2) }}%
+        {% else %}
+            0%
+        {% endif %}
+    </p>
+    <p>
+        <strong>Wins:</strong> {{ win_count }} |
+        <strong>Losses:</strong> {{ (matches|length) -win_count }}
+    </p>
 
     <!-- Main Layout Sections -->
     <div class="main-layout">
@@ -14,33 +25,57 @@
         <div class="left-side">
             <!-- Stats Section -->
             <section class="stats-section">
-                <h3>Average Stats</h3>
-                <div class="average-stats scrollable">
-                    <p><strong>Kills:</strong> {{ (player_detail['stats_totals'].get('kills', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Deaths:</strong> {{ (player_detail['stats_totals'].get('deaths', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Assists:</strong> {{ (player_detail['stats_totals'].get('assists', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>KDA:</strong> {{ ((player_detail['stats_totals'].get('kills', 0) + player_detail['stats_totals'].get('assists', 0)) / player_detail['stats_totals'].get('deaths', 0)) | round(1) }}</p>
-                    <p><strong>Gold Earned:</strong> {{ (player_detail['stats_totals'].get('goldEarned', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Gold Per Minute (GPM):</strong> {{ (player_detail['stats_totals'].get('goldPerMinute', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Total Damage Dealt:</strong> {{ (player_detail['stats_totals'].get('totalDamageDealt', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Total Damage Dealt to Champions:</strong> {{ (player_detail['stats_totals'].get('totalDamageDealtToChampions', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Total Damage Taken:</strong> {{ (player_detail['stats_totals'].get('totalDamageTaken', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Damage Dealt Per Minute:</strong> {{ (player_detail['stats_totals'].get('damagePerMinute', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Damage Dealt Per Gold Spent:</strong> {{ (player_detail['stats_totals'].get('damageToChampionsPerGoldSpent', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Creep Score (CS):</strong> {{ (player_detail['stats_totals'].get('totalMinionsKilled', 0) + player_detail['stats_totals'].get('neutralMinionsKilled', 0)) / player_detail['match_history']|length | round(1) }}</p>
-                    <p><strong>CS Per Minute:</strong> {{ ((player_detail['stats_totals'].get('totalMinionsKilled', 0) + player_detail['stats_totals'].get('neutralMinionsKilled', 0)) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Total Gold Spent:</strong> {{ (player_detail['stats_totals'].get('goldSpent', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Largest Killing Spree:</strong> {{ (player_detail['stats_totals'].get('largestKillingSpree', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Killing Sprees:</strong> {{ (player_detail['stats_totals'].get('killingSprees', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Double Kills:</strong> {{ (player_detail['stats_totals'].get('doubleKills', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Triple Kills:</strong> {{ (player_detail['stats_totals'].get('tripleKills', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Quadra Kills:</strong> {{ (player_detail['stats_totals'].get('quadraKills', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Penta Kills:</strong> {{ (player_detail['stats_totals'].get('pentaKills', 0) / player_detail['match_history']|length) | round(1) }}</p>
-                    <p><strong>Unreal Kills:</strong> {{ (player_detail['stats_totals'].get('unrealKills', 0) / player_detail['match_history']|length) | round(1) }}</p>
+                <!-- Combat Stats -->
+                <h3 class="collapsible-header" onclick="toggleSection('combat-stats')">Combat Stats</h3>
+                <div id="combat-stats" class="collapsible-content">
+                    <p><strong>Kills:</strong> {{ player_detail['stats_totals'].get('kills', 0) / player_detail['match_history']|length | round(1) }}</p>
+                    <p><strong>Deaths:</strong> {{ player_detail['stats_totals'].get('deaths', 0) / player_detail['match_history']|length | round(1) }}</p>
+                    <p><strong>Assists:</strong> {{ player_detail['stats_totals'].get('assists', 0) / player_detail['match_history']|length | round(1) }}</p>
+                    <p><strong>KDA:</strong> {{ ((player_detail['stats_totals'].get('kills', 0) + player_detail['stats_totals'].get('assists', 0)) / player_detail['stats_totals'].get('deaths', 1)) | round(2) }}</p>
+                    <p><strong>Double Kills:</strong> {{ player_detail['stats_totals'].get('doubleKills', 0) / player_detail['match_history']|length | round(1) }}</p>
+                    <p><strong>Triple Kills:</strong> {{ player_detail['stats_totals'].get('tripleKills', 0) / player_detail['match_history']|length | round(1) }}</p>
+                    <p><strong>Quadra Kills:</strong> {{ player_detail['stats_totals'].get('quadraKills', 0) / player_detail['match_history']|length | round(1) }}</p>
+                    <p><strong>Penta Kills:</strong> {{ player_detail['stats_totals'].get('pentaKills', 0) / player_detail['match_history']|length | round(1) }}</p>
+                </div>
+
+                <!-- Damage Stats-->
+                <h3 class="collapsible-header" onclick="toggleSection('damage-stats-per-minute')">Damage Stats</h3>
+                <div id="damage-stats-per-minute" class="collapsible-content">
+                    <p><strong>Total Damage Dealt:</strong> {{ player_detail['stats_totals'].get('totalDamageDealt', 0) / player_detail['match_history']|length | round(1) }} ({{ (player_detail['stats_totals'].get('totalDamageDealt', 0) / (total_time_spent_in_seconds / 60)) | round(2) }} per minute)</p>
+                    <p><strong>Total Damage Dealt to Champions:</strong> {{ player_detail['stats_totals'].get('totalDamageDealtToChampions', 0) / player_detail['match_history']|length | round(1) }} ({{ (player_detail['stats_totals'].get('totalDamageDealtToChampions', 0) / (total_time_spent_in_seconds / 60)) | round(2) }} per minute)</p>
+                    <p><strong>Total Damage Taken:</strong> {{ player_detail['stats_totals'].get('totalDamageTaken', 0) / player_detail['match_history']|length | round(1) }} ({{ (player_detail['stats_totals'].get('totalDamageTaken', 0) / (total_time_spent_in_seconds / 60)) | round(2) }} per minute)</p>
+                    <p><strong>Physical Damage Dealt to Champions:</strong> {{ player_detail['stats_totals'].get('physicalDamageDealtToChampions', 0) / player_detail['match_history']|length | round(1) }} ({{ (player_detail['stats_totals'].get('physicalDamageDealtToChampions', 0) / (total_time_spent_in_seconds / 60)) | round(2) }} per minute)</p>
+                    <p><strong>Magic Damage Dealt to Champions:</strong> {{ player_detail['stats_totals'].get('magicDamageDealtToChampions', 0) / player_detail['match_history']|length | round(1) }} ({{ (player_detail['stats_totals'].get('magicDamageDealtToChampions', 0) / (total_time_spent_in_seconds / 60)) | round(2) }} per minute)</p>
+                    <p><strong>True Damage Dealt to Champions:</strong> {{ player_detail['stats_totals'].get('trueDamageDealtToChampions', 0) / player_detail['match_history']|length | round(1) }} ({{ (player_detail['stats_totals'].get('trueDamageDealtToChampions', 0) / (total_time_spent_in_seconds / 60)) | round(2) }} per minute)</p>
+                </div>
+
+                <!-- Vision and Warding Stats -->
+                <h3 class="collapsible-header" onclick="toggleSection('vision-stats')">Vision and Warding Stats</h3>
+                <div id="vision-stats" class="collapsible-content">
+                    <p><strong>Vision Score:</strong> {{ player_detail['stats_totals'].get('visionScore', 0) / player_detail['match_history']|length | round(1) }}</p>
+                    <p><strong>Wards Placed:</strong> {{ player_detail['stats_totals'].get('wardsPlaced', 0) / player_detail['match_history']|length | round(1) }}</p>
+                    <p><strong>Wards Killed:</strong> {{ player_detail['stats_totals'].get('wardsKilled', 0) / player_detail['match_history']|length | round(1) }}</p>
+                    <p><strong>Control Wards Purchased:</strong> {{ player_detail['stats_totals'].get('visionWardsBoughtInGame', 0) / player_detail['match_history']|length | round(1) }}</p>
+                </div>
+
+                <!-- Gold and Economy Stats-->
+                <h3 class="collapsible-header" onclick="toggleSection('gold-stats-per-minute')">Gold and Economy Stats</h3>
+                <div id="gold-stats-per-minute" class="collapsible-content">
+                    <p><strong>Gold Earned:</strong> {{ player_detail['stats_totals'].get('goldEarned', 0) / player_detail['match_history']|length | round(1) }} ({{ (player_detail['stats_totals'].get('goldEarned', 0) / (total_time_spent_in_seconds / 60)) | round(2) }} per minute)</p>
+                    <p><strong>Gold Spent:</strong> {{ player_detail['stats_totals'].get('goldSpent', 0) / player_detail['match_history']|length | round(1) }} ({{ (player_detail['stats_totals'].get('goldSpent', 0) / (total_time_spent_in_seconds / 60)) | round(2) }} per minute)</p>
+                    <p><strong>Total Minions Killed (CS):</strong> {{ player_detail['stats_totals'].get('totalMinionsKilled', 0) / player_detail['match_history']|length | round(1) }} ({{ (player_detail['stats_totals'].get('totalMinionsKilled', 0) / (total_time_spent_in_seconds / 60)) | round(2) }} per minute)</p>
+                    <p><strong>Neutral Minions Killed:</strong> {{ player_detail['stats_totals'].get('neutralMinionsKilled', 0) / player_detail['match_history']|length | round(1) }} ({{ (player_detail['stats_totals'].get('neutralMinionsKilled', 0) / (total_time_spent_in_seconds / 60)) | round(2) }} per minute)</p>
+                </div>
+
+                <!-- Objective Control Stats -->
+                <h3 class="collapsible-header" onclick="toggleSection('objective-stats')">Objective Control Stats</h3>
+                <div id="objective-stats" class="collapsible-content">
+                    <p><strong>Dragon Kills:</strong> {{ player_detail['stats_totals'].get('dragonKills', 0) / player_detail['match_history']|length | round(1) }}</p>
+                    <p><strong>Baron Kills:</strong> {{ player_detail['stats_totals'].get('baronKills', 0) / player_detail['match_history']|length | round(1) }}</p>
+                    <p><strong>Turret Kills:</strong> {{ player_detail['stats_totals'].get('turretKills', 0) / player_detail['match_history']|length | round(1) }}</p>
                 </div>
             </section>
 
-            <!-- Match History Section -->
             <section class="match-history-section">
                 <h3>Match History</h3>
                 <ul class="match-history-list">
@@ -391,7 +426,43 @@
         font-size: 10px;
         margin-top: 2px;
     }
+
+    .collapsible-header {
+        cursor: pointer;
+        background-color: var(--bg-dark-blue);
+        color: var(--text-light);
+        padding: 10px;
+        border: 1px solid var(--bg-medium-blue);
+        border-radius: 5px;
+        margin-bottom: 5px;
+    }
+
+    .collapsible-content {
+        padding: 10px;
+        background-color: var(--bg-darker-blue);
+        border-radius: 5px;
+        margin-bottom: 15px;
+    }
+
+    .stats-section {
+        max-width: 100%;
+    }
 </style>
 
+<script>
+    function toggleSection(sectionId) {
+        const content = document.getElementById(sectionId);
+        if (content.style.display === "none" || !content.style.display) {
+            content.style.display = "block";
+        } else {
+            content.style.display = "none";
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+        const sections = document.querySelectorAll('.collapsible-content');
+        sections.forEach(section => section.style.display = 'none');  // Collapse all sections by default
+    });
+</script>
 
 {% endblock %}
