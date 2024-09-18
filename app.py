@@ -1,3 +1,5 @@
+# app.py
+
 from flask import Flask, render_template, request, redirect, url_for
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -177,6 +179,7 @@ def list_teams():
 
     return render_template('teams_list.html', data=teams)
 
+
 @app.route('/match_detail/<object_id>')
 def match_detail(object_id):
     """Display detailed information about a specific match."""
@@ -207,17 +210,22 @@ def match_detail(object_id):
             resolved_teams.append({"team_name": team_id})
     match['teams'] = resolved_teams
 
-    # Create a mapping of summonerId to player _id
+    # Create a mapping of summonerId to player ObjectId
     player_ids = {}
     for player in match.get('data', {}).get('info', {}).get('participants', []):
         player_object = db['players'].find_one({"summonerId": player['summonerId']})
         if player_object:
             player_ids[player['summonerId']] = str(player_object['_id'])
+            print(f"Player found: {player['summonerName']} with ObjectId: {player_object['_id']}")
+        else:
+            print(f"Player with summonerId {player['summonerId']} not found in the database.")
 
     # Add player_ids to match object
     match['player_ids'] = player_ids
+    print(f"Player ID mapping: {player_ids}")
 
     return render_template('match_detail.html', match_detail=match)
+
 
 
 @app.route('/player_detail/<object_id>')
