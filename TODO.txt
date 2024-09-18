@@ -1,11 +1,17 @@
-Match Detail page is done for now
+Match list page
+	completely redo page in the style of match detail
+	use postgame template and thinner bars for it aswell as buttons/selection fields for different divisions/splits
+
 match detail page
-	needs to have the player hyperlinks be buttons that correctly send you to the correct page
 	needs to have the team hyperlinks also be buttons
+	fix the stats in the table at the bottom so they are fetched correctly
+
+postgame_template page
+	needs to have the player hyperlinks be buttons that correctly send you to the correct page
 
 team list page
-	needs to have the buttons redone (background color for hover)
-	needs to have the summoner names turned into buttons and the last 10 matches formatted better
+	completely redo the team list page in the same kind of remake style as match_list
+	make the buttons thinner and the popout contain more information formatted more compactly
 
 team detail page
 	have the average stats take into acount that there are 5 players on the team

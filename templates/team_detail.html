@@ -15,10 +15,24 @@ i<!-- templates/team_detail.html -->
         <!-- Stats Section -->
         <div class="stats-section">
             <h3>Team Stats</h3>
-            <p><strong>Win Rate:</strong> {{ (team_detail['wins'] / (team_detail['wins'] + team_detail['losses'])) * 100 | round(1) }}% | <strong>Wins:</strong> {{ team_detail['wins'] }} | <strong>Losses:</strong> {{ team_detail['losses'] }}</p>
-            <p><strong>Average Kills:</strong> {{ (team_detail['stats_totals'].get('kills', 0) / (team_detail['stats_totals'].get('matches', 1))) | round(1) }}</p>
-            <p><strong>Average Deaths:</strong> {{ (team_detail['stats_totals'].get('deaths', 0) / (team_detail['stats_totals'].get('matches', 1))) | round(1) }}</p>
-            <p><strong>Average Assists:</strong> {{ (team_detail['stats_totals'].get('assists', 0) / (team_detail['stats_totals'].get('matches', 1))) | round(1) }}</p>
+            <p>
+                <strong>Win Rate:</strong> 
+                {{ (team_detail['wins'] / (team_detail['wins'] + team_detail['losses'])) * 100 | round(1) }}% | 
+                <strong>Wins:</strong> {{ team_detail['wins'] }} | 
+                <strong>Losses:</strong> {{ team_detail['losses'] }}
+            </p>
+            <p>
+                <strong>Average Kills per Player per Game:</strong> 
+                {{ (team_detail['stats_totals'].get('kills', 0) / ((team_detail['wins'] + team_detail['losses']) * 5)) | round(1) }}
+            </p>
+            <p>
+                <strong>Average Deaths per Player per Game:</strong> 
+                {{ (team_detail['stats_totals'].get('deaths', 0) / ((team_detail['wins'] + team_detail['losses']) * 5)) | round(1) }}
+            </p>
+            <p>
+                <strong>Average Assists per Player per Game:</strong> 
+                {{ (team_detail['stats_totals'].get('assists', 0) / ((team_detail['wins'] + team_detail['losses']) * 5)) | round(1) }}
+            </p>
         </div>
 
         <!-- Champion Statistics Section -->

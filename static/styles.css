@@ -238,17 +238,28 @@ input, select, textarea {
     border-radius: 8px;
 }
 
-/* Custom scrollbar styling for scrollable lists */
-.scrollable-list::-webkit-scrollbar {
-    width: 4px; /* Thin scrollbar */
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 8px; /* Width of the scrollbar */
+    height: 8px; /* Height of the scrollbar (for horizontal scrollbars) */
 }
 
-.scrollable-list::-webkit-scrollbar-thumb {
-    background: var(--accent-light-gold); /* Gold color for the scrollbar thumb */
-    border-radius: 10px; /* Rounded corners for a smooth look */
+::-webkit-scrollbar-thumb {
+    background-color: var(--accent-light-gold); /* Gold color for the scrollbar thumb */
+    border-radius: 10px; /* Rounded edges */
 }
 
-.scrollable-list::-webkit-scrollbar-track {
-    background: var(--bg-dark-blue); /* Dark blue for the scrollbar track */
-    border-radius: 10px; /* Rounded corners for a smooth look */
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--accent-gold); /* Slightly lighter gold on hover */
 }
+
+::-webkit-scrollbar-track {
+    background-color: var(--bg-dark-blue); /* Background of the scrollbar track */
+    border-radius: 10px; /* Rounded edges for the track */
+}
+
+/* Optional: Adjust scrollbar thumb size when active */
+::-webkit-scrollbar-thumb:active {
+    background-color: var(--accent-gold); /* Darker gold when clicked */
+}
+
