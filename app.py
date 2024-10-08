@@ -198,7 +198,7 @@ def match_detail(object_id):
 
     # Game date
     game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
-    match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S') if game_start_timestamp else "Date not available"
+    match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%:M:%S') if game_start_timestamp else "Date not available"
 
     # Resolve team names
     resolved_teams = []
@@ -297,7 +297,7 @@ def player_detail(object_id):
 
             # Add the timestamp for sorting
             game_start_timestamp = match.get('data', {}).get('game_start_timestamp')
-            match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S') if game_start_timestamp else "Date not available"
+            match['date'] = datetime.utcfromtimestamp(game_start_timestamp / 1000).strftime('%Y-%m-%d %H:%:M:%S') if game_start_timestamp else "Date not available"
             match['timestamp'] = game_start_timestamp or 0  # Set to 0 if None, to handle sorting
 
             match['player_team'] = player_team
@@ -406,6 +406,22 @@ def team_detail(object_id):
     # Pass `latestVersion` and `championMap` correctly
     return render_template('team_detail.html', team_detail=team, latestVersion=latest_version, championMap=champion_map)
 
+
+@app.route('/data_analysis/filter', methods=['POST'])
+def filter_data_analysis():
+    """Handle filtering for data analysis based on user inputs."""
+    filter_options = request.json  # Extract the filter options from the request (split, division, etc.)
+
+    # Prepare the MongoDB query
+    query = {}
+
+    # Apply split filter
+    if 'split' in filter_options and filter_options['split']:
+        query['split'] = filter_options['split']
+
+    # Apply division filter
+    if 'division' in filter_options and filter_options['division']:
+        query['division'] = filter_options['division']
 
 if __name__ == '__main__':
     app.run(debug=True)

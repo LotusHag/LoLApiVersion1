@@ -3,6 +3,10 @@
 import sys
 import os
 import pandas as pd
+
+# Add the project root directory to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from src.fetch_data import get_match_data
 from src.process_data import process_match_data
 from src.store_data import get_database, store_match_data
